@@ -10,6 +10,7 @@ namespace HttpEngine.Core
     {
         public List<string> Routes { get; set; } = new();
         public string PublicDirectory { get; set; }
+        public IModel Error404 { get; set; }
 
         public virtual ModelResponse OnRequest(ModelRequest request)
         {

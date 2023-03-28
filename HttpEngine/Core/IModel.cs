@@ -6,6 +6,7 @@ namespace HttpEngine.Core
     {
         public List<string> Routes { get; set; }
         public string PublicDirectory { get; set; }
+        public IModel Error404 { get; set; }
 
         public ModelResponse OnRequest(ModelRequest request);
     }

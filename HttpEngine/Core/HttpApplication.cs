@@ -27,6 +27,7 @@ namespace HttpEngine.Core
         public void UseModel(IModel model)
         {
             model.PublicDirectory = Router.PublicDirectory;
+            model.Error404 = Router.Error404Page;
             Router.Models.Add(model);
         }
 
@@ -34,7 +35,8 @@ namespace HttpEngine.Core
         {
             T model = new()
             {
-                PublicDirectory = Router.PublicDirectory
+                PublicDirectory = Router.PublicDirectory,
+                Error404 = Router.Error404Page,
             };
             Router.Models.Add(model);
         }
