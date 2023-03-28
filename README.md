@@ -41,7 +41,7 @@ app.UseModel(new MyModel());
 app.Run();
 ```
 
-`Router` class routes client request by dictionary. It takes public files directory, dictionary with routes and error 404 model:
+`Router` class routes client request. It takes public files directory and error 404 model:
 ```c#
 Router router = new Router(
     publicDirectory: $@"{Environment.CurrentDirectory}/Public",
