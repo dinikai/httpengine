@@ -1,5 +1,5 @@
 # httpengine
-Simple **HTTP** MVC server with Router
+Simple **HTTP** server with routing
 
 ## Views and public files
 All public files are in /Public directiory.
@@ -8,24 +8,34 @@ All public files are in /Public directiory.
 ```html
 <span>@tag</span>
 ```
-That **@tag** will be replaced with model's ViewData dictionary
+That **@tag** will be replaced with *ViewParser*'s `Parse` method.
 
 ## Models
-All models must realize `IModel` interface: it has OnRequest method which call when client requests a page with this model.
+All models must inherit `Model` class: it has OnRequest method which call when client requests a page with this model.
 That method returns a `ModelResponse` class:
 ```c#
 public class ModelResponse
 {
-  public string ResponseFile { get; set; } = string.Empty; // Path of file to load
-  public Dictionary<string, object> ViewData { get; set; } = new(); // Tag replace dictionary
+  public byte[] ResponseData { get; set; } // Response buffer
 }
 ```
 
-## *HttpApplication* and *Router*
-The `HttpApplication` class represents web-application, it takes **Router** object as argument:
+## *HttpApplication*, *HttpApplicationBuilder* and *Router*
+The `HttpApplicationBuilder` is class which builds a HttpApplication. This class represents web-application:
 ```c#
-HttpApplication app = new HttpApplication(router);
+var builder = new HttpApplicationBuilder();
+var app = builder.Build();
 ```
+
+`HttpApplication` has a *UseModel* method, that connecting a model to application:
+```c#
+app.UseModel<MyModel>();
+```
+you also can explicitly declare an model if you need:
+```c#
+app.UseModel(new MyModel());
+```
+
 `Run()` method runs an application:
 ```c#
 app.Run();
@@ -35,17 +45,8 @@ app.Run();
 ```c#
 Router router = new Router(
     publicDirectory: $@"{Environment.CurrentDirectory}/Public",
-    routes: routes,
-    error404Page: error404Model
+    error404Page: error404Model,
 );
 ```
-
-Routes dictionary has `Dictionary<string, IModel>` signature. Example:
-```c#
-Dictionary<string, IModel> routes = new()
-{
-    ["/"] = indexModel,
-    ["/Index"] = indexModel,
-    ["/Database"] = dbTestModel
-};
-```
+> **Note**
+> Router will be declared implicitly in `HttpApplicationBuilder`, but you can explicitly declare it in `HttpApplicationBuilderOptions
