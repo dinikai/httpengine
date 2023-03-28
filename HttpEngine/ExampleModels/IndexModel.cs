@@ -3,9 +3,14 @@ using System;
 
 namespace HttpEngine.Models
 {
-    internal class IndexModel : IModel
+    internal class IndexModel : Model
     {
-        public ModelResponse OnRequest(ModelRequest request)
+        public IndexModel()
+        {
+            Routes = new() { "/", "/Index" };
+        }
+
+        public override ModelResponse OnRequest(ModelRequest request)
         {
             var response = new ModelResponse();
             string argsString = "";
@@ -15,14 +20,15 @@ namespace HttpEngine.Models
             }
 
             Random random = new Random();
-            response.ViewData = new()
+
+            var viewReplace = new Dictionary<string, object>()
             {
-                ["title"] = request.Method,
-                ["random"] = random.Next(50000),
-                ["args"] = argsString
+                ["title"] = "HttpEngine",
+                ["random"] = random.Next(1000),
+                ["args"] = argsString,
             };
 
-            response.ResponseFile = "Pages/Index.html";
+            response.ResponseData = ViewParser.Parse(File("Pages/Index.html"), viewReplace);
             return response;
         }
     }

@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.IO;
+using System.Net;
+using System.Text;
 
 namespace HttpEngine.Core
 {
@@ -11,20 +13,22 @@ namespace HttpEngine.Core
         /// Директория с публичными файлами, доступными по интернету
         /// </summary>
         public string PublicDirectory { get; set; }
+
         /// <summary>
         /// Страница-заглушка при 404
         /// </summary>
         public IModel Error404Page { get; set; }
-        /// <summary>
-        /// Все пути к моделям через URL
-        /// </summary>
-        public Dictionary<string, IModel> Routes { get; set; }
 
-        public Router(string publicDirectory, Dictionary<string, IModel> routes, IModel error404Page)
+        /// <summary>
+        /// Список моделей
+        /// </summary>
+        public List<IModel> Models { get; set; }
+
+        public Router(string publicDirectory, IModel error404Page)
         {
             PublicDirectory = publicDirectory;
-            Routes = routes;
             Error404Page = error404Page;
+            Models = new List<IModel>();
         }
 
         public RouterResponse Route(HttpListenerContext context)
@@ -43,53 +47,57 @@ namespace HttpEngine.Core
                 }
             }
 
-            byte[] buffer;
-            bool publicFile, containsRoute = Routes.ContainsKey("/" + urlRoutes[0]), fileExists = true;
-            string pagePath;
+            bool publicFile;
+            string route = "/" + urlRoutes[0];
+            IModel? model = null;
+            foreach (IModel modelEach in Models)
+            {
+                foreach (string routeEach in modelEach.Routes)
+                {
+                    if (routeEach == route) model = modelEach;
+                }
+            }
+            byte[] viewData;
             ModelResponse modelResponse = new();
+
+            int statusCode = 200;
             // Если такой путь к модели существует,
-            if (containsRoute)
+            if (model != null)
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
                 var modelRequest = new ModelRequest(args, urlRoutes.ToArray(), context.Request.HttpMethod);
-                modelResponse = Routes["/" + urlRoutes[0]].OnRequest(modelRequest);
-                pagePath = @$"{PublicDirectory}/{modelResponse.ResponseFile}";
+                modelResponse = model.OnRequest(modelRequest);
+                viewData = modelResponse.ResponseData;
                 publicFile = false;
             } else
             {
                 // Иначе пытаемся найти сырой файл
-                pagePath = @$"{PublicDirectory}{rawUrlWithoutArgs}";
+                string path = @$"{PublicDirectory}{rawUrlWithoutArgs}";
                 publicFile = true;
-            }
 
-            int statusCode = 200;
-            if (!File.Exists(pagePath))
-            {
-                // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
-                var modelRequest = new ModelRequest(args, urlRoutes.ToArray(), context.Request.HttpMethod);
-                modelResponse = Error404Page.OnRequest(modelRequest);
-                pagePath = @$"{PublicDirectory}/{modelResponse.ResponseFile}";
-                statusCode = 404;
-                fileExists = false;
+                if (File.Exists(path))
+                {
+                    FileStream file = new FileStream(path, FileMode.Open);
+                    viewData = new byte[file.Length];
+                    file.Read(viewData, 0, viewData.Length);
+                    file.Close();
+                } else
+                {
+                    // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
+                    var modelRequest = new ModelRequest(args, urlRoutes.ToArray(), context.Request.HttpMethod);
+                    modelResponse = Error404Page.OnRequest(modelRequest);
+                    viewData = modelResponse.ResponseData;
+                    statusCode = 404;
+                }
             }
-            // Читаем страницу, сырой файл или страницу с ошибкой
-            FileStream file = new FileStream(pagePath, FileMode.Open);
-            buffer = new byte[file.Length];
-            file.Read(buffer, 0, buffer.Length);
-            file.Close();
-
-            // Обрабатываем исходную HTML-страницу, заменяя метки (@tag) на значения, вышедшие из модели
-            if (containsRoute || !fileExists)
-                buffer = ViewParser.Parse(buffer, modelResponse.ViewData);
 
             // Компонуем и возвращаем ответ
             return new RouterResponse()
             {
                 UrlRoutes = urlRoutes.ToArray(),
-                PageBuffer = buffer,
+                PageBuffer = viewData,
                 Arguments = args,
                 PublicFile = publicFile,
-                Path = pagePath,
                 StatusCode = statusCode
             };
         }
@@ -104,7 +112,6 @@ namespace HttpEngine.Core
         public byte[] PageBuffer { get; set; }
         public Dictionary<string, string> Arguments { get; set; }
         public bool PublicFile { get; set; }
-        public string Path { get; set; }
         public int StatusCode { get; set; }
     }
 }

@@ -1,23 +1,12 @@
 ﻿using HttpEngine.Core;
 using HttpEngine.Models;
+using System.Net;
 
-IModel indexModel = new IndexModel();
-IModel error404Model = new Error404Model();
-IModel dbTestModel = new DbTestModel();
+var builder = new HttpApplicationBuilder();
+var app = builder.Build();
+app.Listener.Prefixes.Add("http://localhost:8008/");
 
-Dictionary<string, IModel> routes = new()
-{
-    ["/"] = indexModel,
-    ["/Index"] = indexModel,
-    ["/Database"] = dbTestModel
-};
-
-Router router = new Router(
-    publicDirectory: $@"{Environment.CurrentDirectory}/Public",
-    routes: routes,
-    error404Page: error404Model
-);
-
-HttpApplication app = new HttpApplication(router);
+app.UseModel<IndexModel>();
+app.UseModel<DbTestModel>();
 
 app.Run();

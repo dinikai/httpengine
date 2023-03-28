@@ -3,8 +3,8 @@ using System;
 
 namespace HttpEngine.Models
 {
-    internal class Error404Model : IModel
+    internal class Error404Model : Model
     {
-        public ModelResponse OnRequest(ModelRequest request) => new ModelResponse("Pages/Error404.html");
+        public override ModelResponse OnRequest(ModelRequest request) => new ModelResponse(File("Pages/Error404.html"));
     }
 }

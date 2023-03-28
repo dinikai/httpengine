@@ -20,9 +20,23 @@ namespace HttpEngine.Core
         public HttpApplication(Router router)
         {
             Listener = new HttpListener();
-            Listener.Prefixes.Add("http://localhost:8008/");
 
             Router = router;
+        }
+
+        public void UseModel(IModel model)
+        {
+            model.PublicDirectory = Router.PublicDirectory;
+            Router.Models.Add(model);
+        }
+
+        public void UseModel<T>() where T : IModel, new()
+        {
+            T model = new()
+            {
+                PublicDirectory = Router.PublicDirectory
+            };
+            Router.Models.Add(model);
         }
 
         /// <summary>
@@ -50,7 +64,6 @@ namespace HttpEngine.Core
 
                 // Всякие выводы в консоль
                 Console.WriteLine("Got request: " + context.Request.Url!.ToString());
-                Console.WriteLine("\t" + (routerResponse.PublicFile ? "Sent public file at " : "Sent page at ") + routerResponse.Path);
                 Console.WriteLine("\twith code " + routerResponse.StatusCode.ToString());
                 Console.WriteLine("\tRaw URL: " + context.Request.RawUrl);
                 Console.Write("\tQuery parameters: ");

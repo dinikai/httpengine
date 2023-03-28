@@ -3,16 +3,17 @@ using System;
 
 namespace HttpEngine.Models
 {
-    internal class DbTestModel : IModel
+    internal class DbTestModel : Model
     {
         public List<string> Db { get; set; }
 
         public DbTestModel()
         {
             Db = new List<string>();
+            Routes = new() { "/Database" };
         }
 
-        public ModelResponse OnRequest(ModelRequest request)
+        public override ModelResponse OnRequest(ModelRequest request)
         {
             var response = new ModelResponse();
             if (request.Method == "POST")
@@ -26,12 +27,13 @@ namespace HttpEngine.Models
                 dbString += $"<li>{item}</li>";
             }
 
-            response.ViewData = new()
+            var viewReplace = new Dictionary<string, object>()
             {
-                ["db"] = dbString
+                ["title"] = "Database",
+                ["db"] = dbString,
             };
 
-            response.ResponseFile = "Pages/Database.html";
+            response.ResponseData = ViewParser.Parse(File("Pages/Database.html"), viewReplace);
             return response;
         }
     }

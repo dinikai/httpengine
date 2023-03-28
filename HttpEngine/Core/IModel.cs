@@ -4,6 +4,9 @@ namespace HttpEngine.Core
 {
     public interface IModel
     {
+        public List<string> Routes { get; set; }
+        public string PublicDirectory { get; set; }
+
         public ModelResponse OnRequest(ModelRequest request);
     }
 
@@ -23,13 +26,9 @@ namespace HttpEngine.Core
 
     public class ModelResponse
     {
-        public string ResponseFile { get; set; } = string.Empty;
-        public Dictionary<string, object> ViewData { get; set; } = new();
+        public byte[] ResponseData { get; set; } = Array.Empty<byte>();
 
         public ModelResponse() { }
-
-        public ModelResponse(string responseFile) => ResponseFile = responseFile;
-
-        public ModelResponse(Dictionary<string, object> viewData) => ViewData = viewData;
+        public ModelResponse(byte[] responseData) => ResponseData = responseData;
     }
 }
