@@ -6,6 +6,7 @@ namespace HttpEngine.Core
     {
         Router? router;
         string? ip;
+        string? layout;
 
         public HttpApplicationBuilder()
         {
@@ -14,16 +15,21 @@ namespace HttpEngine.Core
         {
             router = options.Router;
             ip = options.Ip;
+            layout = options.Layout;
         }
 
         public HttpApplication Build()
         {
+            string ip = this.ip ?? "http://localhost:8888/";
+            string layout = this.layout ?? "_Layout.html";
+
             if (router == null)
             {
                 string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
                 var error404 = new Error404Model()
                 {
-                    PublicDirectory = publicDirectory
+                    PublicDirectory = publicDirectory,
+                    Layout = layout,
                 };
 
                 router = new Router(
@@ -31,12 +37,8 @@ namespace HttpEngine.Core
                     error404Page: error404
                 );
             }
-            if (ip == null)
-            {
-                ip = "http://localhost:8888/";
-            }
 
-            var application = new HttpApplication(router, ip);
+            var application = new HttpApplication(router, ip, layout);
             return application;
         }
     }

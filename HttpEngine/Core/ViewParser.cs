@@ -4,11 +4,11 @@ namespace HttpEngine.Core
 {
     public static class ViewParser
     {
-        public static byte[] Parse(ref byte[] bytes, Dictionary<string, object> dictionary)
+        public static byte[] Parse(ref byte[] bytes, Dictionary<string, object> dictionary, bool removeSections = true)
         {
             string @string = Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "@"));
             int indexOfSection = @string.IndexOf("!==");
-            if (indexOfSection != -1)
+            if (indexOfSection != -1 && removeSections)
                 @string = @string.Remove(indexOfSection);
 
             bytes = Encoding.UTF8.GetBytes(@string);

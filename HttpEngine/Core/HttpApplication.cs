@@ -11,26 +11,29 @@ namespace HttpEngine.Core
         /// <summary>
         /// Главный HttpListener
         /// </summary>
-        HttpListener Listener;
+        HttpListener listener;
 
         /// <summary>
         /// Объект роутера
         /// </summary>
-        Router Router;
+        Router router;
+        string layout;
 
-        public HttpApplication(Router router, string ip)
+        public HttpApplication(Router router, string ip, string layout)
         {
-            Listener = new HttpListener();
-            Listener.Prefixes.Add(ip);
+            listener = new HttpListener();
+            listener.Prefixes.Add(ip);
 
-            Router = router;
+            this.router = router;
+            this.layout = layout;
         }
 
         public IModel UseModel(IModel model)
         {
-            model.PublicDirectory = Router.PublicDirectory;
-            model.Error404 = Router.Error404Page;
-            Router.Models.Add(model);
+            model.PublicDirectory = router.PublicDirectory;
+            model.Error404 = router.Error404Page;
+            model.Layout = layout;
+            router.Models.Add(model);
 
             return model;
         }
@@ -39,10 +42,11 @@ namespace HttpEngine.Core
         {
             T model = new()
             {
-                PublicDirectory = Router.PublicDirectory,
-                Error404 = Router.Error404Page,
+                PublicDirectory = router.PublicDirectory,
+                Error404 = router.Error404Page,
+                Layout = layout
             };
-            Router.Models.Add(model);
+            router.Models.Add(model);
 
             return model;
         }
@@ -54,16 +58,16 @@ namespace HttpEngine.Core
         {
             Console.Write($"Server started at ");
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"{Listener.Prefixes.ToArray()[0]}");
+            Console.WriteLine($"{listener.Prefixes.ToArray()[0]}");
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("Listening for connections...");
             while (true)
             {
-                Listener.Start();
-                HttpListenerContext context = Listener.GetContext();
+                listener.Start();
+                HttpListenerContext context = listener.GetContext();
 
                 // Обработать запрос роутером и получить RouterResponse
-                var routerResponse = Router.Route(context);
+                var routerResponse = router.Route(context);
 
                 // Формирование и отправка ответа
                 context.Response.ContentLength64 = routerResponse.PageBuffer.Length;
@@ -72,7 +76,7 @@ namespace HttpEngine.Core
                 output.Write(routerResponse.PageBuffer);
                 output.Flush();
 
-                Listener.Stop();
+                listener.Stop();
 
                 // Всякие выводы в консоль
                 Console.ForegroundColor = ConsoleColor.Green;
