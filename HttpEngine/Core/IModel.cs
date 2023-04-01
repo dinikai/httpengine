@@ -16,6 +16,7 @@ namespace HttpEngine.Core
         public Dictionary<string, string> Arguments { get; set; }
         public string[] UrlRoutes { get; set; }
         public string Method { get; set; }
+        public string? Handler { get; set; }
 
         public ModelRequest(Dictionary<string, string> arguments, string[] urlRoutes, string method)
         {

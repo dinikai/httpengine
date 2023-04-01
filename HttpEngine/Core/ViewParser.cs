@@ -4,9 +4,17 @@ namespace HttpEngine.Core
 {
     public static class ViewParser
     {
-        public static byte[] Parse(byte[] bytes, Dictionary<string, object> dictionary) => ParseRaw(bytes, dictionary, "@");
-        public static string ParseSection(byte[] bytes, Dictionary<string, object> dictionary)
-            => Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "$"));
+        public static byte[] Parse(ref byte[] bytes, Dictionary<string, object> dictionary)
+        {
+            string @string = Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "@"));
+            int indexOfSection = @string.IndexOf("!==");
+            if (indexOfSection != -1)
+                @string = @string.Remove(indexOfSection);
+
+            bytes = Encoding.UTF8.GetBytes(@string);
+            return bytes;
+        }
+        public static string ParseSection(byte[] bytes, Dictionary<string, object> dictionary) => Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "$"));
 
         static byte[] ParseRaw(byte[] bytes, Dictionary<string, object> dictionary, string prefix)
         {
@@ -19,14 +27,12 @@ namespace HttpEngine.Core
             return Encoding.UTF8.GetBytes(data);
         }
 
-        public static string GetSection(ref byte[] bytes, string sectionName, Dictionary<string, object> dictionary)
+        public static string GetSection(byte[] bytes, string sectionName, Dictionary<string, object> dictionary)
         {
             string data = Encoding.UTF8.GetString(bytes);
             string section = data.Between($"!=={sectionName}", "==!");
             section = ParseSection(Encoding.UTF8.GetBytes(section), dictionary);
 
-            string withoutSection = data.Between($"!=={sectionName}", "==!", true);
-            bytes = Encoding.UTF8.GetBytes(withoutSection);
             return section;
         }
     }

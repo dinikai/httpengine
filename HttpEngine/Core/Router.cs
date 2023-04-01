@@ -58,14 +58,17 @@ namespace HttpEngine.Core
                 }
             }
             byte[] viewData;
-            ModelResponse modelResponse = new();
+            ModelResponse modelResponse;
 
             int statusCode = 200;
-            // Если такой путь к модели существует,
+            // Если модель существует,
             if (model != null)
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
                 var modelRequest = new ModelRequest(args, urlRoutes.ToArray(), context.Request.HttpMethod);
+                if (args.ContainsKey("handler")) modelRequest.Handler = args["handler"];
+                else modelRequest.Handler = "";
+
                 modelResponse = model.OnRequest(modelRequest);
                 viewData = modelResponse.ResponseData;
                 publicFile = false;

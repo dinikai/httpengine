@@ -15,6 +15,16 @@ namespace HttpEngine.Models
 
         public override ModelResponse OnRequest(ModelRequest request)
         {
+            if (request.Handler == "remove")
+            {
+                if (request.Arguments.ContainsKey("i"))
+                {
+                    int index = Convert.ToInt32(request.Arguments["i"]);
+                    if (index < Db.Count) Db.RemoveAt(index);
+                }
+            }
+
+            byte[] responseFile = File("Pages/Database.html");
             var response = new ModelResponse();
             if (request.Method == "POST")
             {
@@ -22,9 +32,13 @@ namespace HttpEngine.Models
             }
 
             string dbString = "";
-            foreach (var item in Db)
+            for (int i = 0; i < Db.Count; i++)
             {
-                dbString += $"<li>{item}</li>";
+                dbString += ViewParser.GetSection(responseFile, "dbItem", new()
+                {
+                    ["item"] = Db[i],
+                    ["index"] = i,
+                });
             }
 
             var viewReplace = new Dictionary<string, object>()
@@ -33,7 +47,7 @@ namespace HttpEngine.Models
                 ["db"] = dbString,
             };
 
-            response.ResponseData = ViewParser.Parse(File("Pages/Database.html"), viewReplace);
+            response.ResponseData = ViewParser.Parse(ref responseFile, viewReplace);
             return response;
         }
     }

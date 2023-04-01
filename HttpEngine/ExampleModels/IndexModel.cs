@@ -19,7 +19,7 @@ namespace HttpEngine.Models
             var argsSb = new StringBuilder();
             foreach (var argument in request.Arguments)
             {
-                string section = ViewParser.GetSection(ref responseFile, "argument", new()
+                string section = ViewParser.GetSection(responseFile, "argument", new()
                 {
                     ["argName"] = argument.Key,
                     ["argValue"] = argument.Value,
@@ -35,7 +35,7 @@ namespace HttpEngine.Models
                 ["args"] = argsSb.ToString(),
             };
 
-            response.ResponseData = ViewParser.Parse(responseFile, viewReplace);
+            response.ResponseData = ViewParser.Parse(ref responseFile, viewReplace);
             return response;
         }
     }
