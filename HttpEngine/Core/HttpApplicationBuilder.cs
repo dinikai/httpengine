@@ -4,19 +4,21 @@ namespace HttpEngine.Core
 {
     internal class HttpApplicationBuilder
     {
-        private Router? Router;
+        Router? router;
+        string? ip;
 
         public HttpApplicationBuilder()
         {
         }
         public HttpApplicationBuilder(HttpApplicationBuilderOptions options)
         {
-            Router = options.Router;
+            router = options.Router;
+            ip = options.Ip;
         }
 
         public HttpApplication Build()
         {
-            if (Router == null)
+            if (router == null)
             {
                 string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
                 var error404 = new Error404Model()
@@ -24,13 +26,17 @@ namespace HttpEngine.Core
                     PublicDirectory = publicDirectory
                 };
 
-                Router = new Router(
+                router = new Router(
                     publicDirectory: publicDirectory,
                     error404Page: error404
                 );
             }
+            if (ip == null)
+            {
+                ip = "http://localhost:8888/";
+            }
 
-            var application = new HttpApplication(Router);
+            var application = new HttpApplication(router, ip);
             return application;
         }
     }

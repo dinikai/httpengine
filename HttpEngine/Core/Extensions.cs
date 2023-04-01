@@ -24,5 +24,41 @@ namespace HttpEngine.Core
 
             return postParams;
         }
+
+        public static string Between(this string @this, string a, string b, bool remove = false)
+        {
+            int posA = @this.IndexOf(a);
+            int posB = @this.IndexOf(b, posA + 1);
+            if (posA == -1)
+            {
+                return "Between error: A = -1";
+            }
+            if (posB == -1)
+            {
+                return "Between error: B = -1";
+            }
+            int adjustedPosA = posA + a.Length;
+            if (adjustedPosA >= posB)
+            {
+                return "Between error: PosA > PosB";
+            }
+
+            if (remove)
+                return @this.Remove(posA, posB - posA + b.Length);
+            else
+                return @this.Substring(adjustedPosA, posB - adjustedPosA);
+        }
+
+        public static string ReplaceFirst(this string @this, string oldValue, string newValue)
+        {
+            int startindex = @this.IndexOf(oldValue);
+
+            if (startindex == -1)
+            {
+                return @this;
+            }
+
+            return @this.Remove(startindex, oldValue.Length).Insert(startindex, newValue);
+        }
     }
 }

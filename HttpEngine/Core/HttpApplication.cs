@@ -11,15 +11,17 @@ namespace HttpEngine.Core
         /// <summary>
         /// Главный HttpListener
         /// </summary>
-        public HttpListener Listener { get; set; }
+        HttpListener Listener;
+
         /// <summary>
         /// Объект роутера
         /// </summary>
-        public Router Router { get; set; }
+        Router Router;
 
-        public HttpApplication(Router router)
+        public HttpApplication(Router router, string ip)
         {
             Listener = new HttpListener();
+            Listener.Prefixes.Add(ip);
 
             Router = router;
         }
@@ -50,7 +52,11 @@ namespace HttpEngine.Core
         /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Server started at {Listener.Prefixes.ToArray()[0]}\nListening for connections...");
+            Console.Write($"Server started at ");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"{Listener.Prefixes.ToArray()[0]}");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("Listening for connections...");
             while (true)
             {
                 Listener.Start();
@@ -69,24 +75,11 @@ namespace HttpEngine.Core
                 Listener.Stop();
 
                 // Всякие выводы в консоль
-                Console.WriteLine("Got request: " + context.Request.Url!.ToString());
-                Console.WriteLine("\twith code " + routerResponse.StatusCode.ToString());
-                Console.WriteLine("\tRaw URL: " + context.Request.RawUrl);
-                Console.Write("\tQuery parameters: ");
-                List<string> args = new List<string>();
-                foreach (var parameter in routerResponse.Arguments)
-                    args.Add($"{parameter.Key}={parameter.Value}");
-                Console.WriteLine(string.Join(", ", args));
-                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("Got request: ");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine(context.Request.Url!.ToString());
             }
-        }
-    }
-
-    public class ApplicationEventArgs : EventArgs
-    {
-        public ApplicationEventArgs()
-        {
-
         }
     }
 }
