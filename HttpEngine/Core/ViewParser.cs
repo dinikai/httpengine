@@ -8,8 +8,9 @@ namespace HttpEngine.Core
         {
             string @string = Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "@"));
             int indexOfSection = @string.IndexOf("!==");
+            int indexOfEnd = @string.IndexOf("==!");
             if (indexOfSection != -1 && removeSections)
-                @string = @string.Remove(indexOfSection);
+                @string = @string.Remove(indexOfSection, indexOfEnd - indexOfSection + 3);
 
             bytes = Encoding.UTF8.GetBytes(@string);
             return bytes;
