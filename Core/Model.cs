@@ -11,7 +11,8 @@ namespace HttpEngine.Core
 
         public virtual ModelResponse OnRequest(ModelRequest request)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return new ModelResponse();
         }
 
         public byte[] File(string path, bool useLayout = true)
