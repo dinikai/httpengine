@@ -1,8 +1,6 @@
-﻿using HttpEngine.Models;
-
-namespace HttpEngine.Core
+﻿namespace HttpEngine.Core
 {
-    internal class HttpApplicationBuilder
+    public class HttpApplicationBuilder
     {
         Router? router;
         string? ip;
@@ -26,7 +24,7 @@ namespace HttpEngine.Core
             if (router == null)
             {
                 string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
-                var error404 = new Error404Model()
+                var error404 = new Model()
                 {
                     PublicDirectory = publicDirectory,
                     Layout = layout,
