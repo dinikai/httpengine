@@ -37,16 +37,6 @@ namespace HttpEngine.Core
             List<string> urlRoutes = rawUrlWithoutArgs.Split("/").ToList();
             urlRoutes.RemoveAt(0);
 
-            Dictionary<string, string> args; // Извлекаем GET-аргументы
-            if (context.Request.HttpMethod == "GET") args = context.Request.QueryString.ToDictionary();
-            else
-            {
-                using (var reader = new StreamReader(context.Request.InputStream))
-                {
-                    args = Extensions.GetPostParams(reader.ReadToEnd());
-                }
-            }
-
             bool publicFile;
             string route = "/" + urlRoutes[0];
             IModel? model = null;
@@ -60,13 +50,36 @@ namespace HttpEngine.Core
             byte[] viewData;
             ModelResponse modelResponse;
 
+            HttpMethod method;
+            switch (context.Request.HttpMethod)
+            {
+                case "GET":
+                    method = HttpMethod.Get;
+                    break;
+                case "POST":
+                    method = HttpMethod.Post;
+                    break;
+                default:
+                    method = HttpMethod.Get;
+                    break;
+            }
+
+            RequestArguments arguments;
+            if (method == HttpMethod.Get) arguments = new RequestArguments(context.Request.QueryString.ToDictionary());
+            else
+            {
+                using var reader = new StreamReader(context.Request.InputStream);
+                arguments = new MultipartRequestArguments(Extensions.GetPostParams(reader.ReadToEnd()), new());
+            }
+
             int statusCode = 200;
             // Если модель существует,
             if (model != null)
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
-                var modelRequest = new ModelRequest(args, urlRoutes.ToArray(), context.Request.HttpMethod);
-                if (args.ContainsKey("handler")) modelRequest.Handler = args["handler"];
+
+                var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method);
+                if (arguments.Arguments.ContainsKey("handler")) modelRequest.Handler = arguments.Arguments["handler"];
                 else modelRequest.Handler = "";
 
                 modelResponse = model.OnRequest(modelRequest);
@@ -87,7 +100,7 @@ namespace HttpEngine.Core
                 } else
                 {
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
-                    var modelRequest = new ModelRequest(args, urlRoutes.ToArray(), context.Request.HttpMethod);
+                    var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method);
                     modelResponse = Error404Page.OnRequest(modelRequest);
                     viewData = modelResponse.ResponseData;
                     statusCode = 404;
@@ -99,7 +112,7 @@ namespace HttpEngine.Core
             {
                 UrlRoutes = urlRoutes.ToArray(),
                 PageBuffer = viewData,
-                Arguments = args,
+                Arguments = arguments,
                 PublicFile = publicFile,
                 StatusCode = statusCode
             };
@@ -113,7 +126,7 @@ namespace HttpEngine.Core
     {
         public string[] UrlRoutes { get; set; }
         public byte[] PageBuffer { get; set; }
-        public Dictionary<string, string> Arguments { get; set; }
+        public RequestArguments Arguments { get; set; }
         public bool PublicFile { get; set; }
         public int StatusCode { get; set; }
     }

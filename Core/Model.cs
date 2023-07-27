@@ -5,9 +5,10 @@ namespace HttpEngine.Core
     public class Model : IModel
     {
         public List<string> Routes { get; set; } = new();
-        public string? PublicDirectory { get; set; }
-        public IModel? Error404 { get; set; }
-        public string? Layout { get; set; }
+        public string PublicDirectory { get; set; }
+        public IModel Error404 { get; set; }
+        public IModel Layout { get; set; }
+        public bool UseLayout { get; set; } = true;
 
         public virtual ModelResponse OnRequest(ModelRequest request)
         {
@@ -15,20 +16,17 @@ namespace HttpEngine.Core
             return new ModelResponse();
         }
 
-        protected byte[] File(string path, bool useLayout = true)
+        protected byte[] File(string path, ModelRequest request)
         {
             FileStream file = new FileStream(Path.Combine(PublicDirectory, path), FileMode.Open);
             byte[] buffer = new byte[file.Length];
             file.Read(buffer);
             file.Close();
 
-            FileStream layoutFile = new FileStream(Path.Combine(PublicDirectory, Layout), FileMode.Open);
-            byte[] layoutBuffer = new byte[layoutFile.Length];
-            layoutFile.Read(layoutBuffer);
-            layoutFile.Close();
-
-            if (useLayout)
+            if (UseLayout)
             {
+                ModelResponse layoutResponse = Layout.OnRequest(request);
+                byte[] layoutBuffer = layoutResponse.ResponseData;
                 byte[] layout = ViewParser.Parse(ref layoutBuffer, new()
                 {
                     ["body"] = Encoding.UTF8.GetString(buffer),

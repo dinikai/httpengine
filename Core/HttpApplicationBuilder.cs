@@ -4,7 +4,7 @@
     {
         Router? router;
         string? host;
-        string? layout;
+        IModel? layout;
 
         public HttpApplicationBuilder()
         {
@@ -18,12 +18,16 @@
 
         public HttpApplication Build()
         {
-            string ip = this.host ?? "http://localhost:8888/";
-            string layout = this.layout ?? "_Layout.html";
+            string host = this.host ?? "http://localhost:8888/";
+            string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
+            IModel layout = this.layout ?? new LayoutModel()
+            {
+                PublicDirectory = publicDirectory,
+                UseLayout = false,
+            };
 
             if (router == null)
             {
-                string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
                 var error404 = new Model()
                 {
                     PublicDirectory = publicDirectory,
@@ -36,7 +40,7 @@
                 );
             }
 
-            var application = new HttpApplication(router, ip, layout);
+            var application = new HttpApplication(router, host, layout);
             return application;
         }
     }

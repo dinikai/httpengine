@@ -4,6 +4,6 @@
     {
         public Router? Router { get; set; }
         public string? Host { get; set; }
-        public string? Layout { get; set; }
+        public IModel? Layout { get; set; }
     }
 }

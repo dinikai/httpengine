@@ -17,9 +17,9 @@ namespace HttpEngine.Core
         /// Объект роутера
         /// </summary>
         Router router;
-        string layout;
+        IModel layout;
 
-        public HttpApplication(Router router, string host, string layout)
+        public HttpApplication(Router router, string host, IModel layout)
         {
             listener = new HttpListener();
             listener.Prefixes.Add(host);
@@ -56,9 +56,9 @@ namespace HttpEngine.Core
             router.Models.Remove(model);
         }
 
-        public void RemoveAll<T>() where T : IModel
+        public void RemoveAll(Predicate<IModel> predicate)
         {
-            router.Models.RemoveAll(x => x is T);
+            router.Models.RemoveAll(x => predicate(x));
         }
 
         /// <summary>

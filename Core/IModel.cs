@@ -7,19 +7,19 @@ namespace HttpEngine.Core
         public List<string> Routes { get; set; }
         public string PublicDirectory { get; set; }
         public IModel Error404 { get; set; }
-        public string Layout { get; set; }
+        public IModel Layout { get; set; }
 
         public ModelResponse OnRequest(ModelRequest request);
     }
 
     public class ModelRequest
     {
-        public Dictionary<string, string> Arguments { get; set; }
+        public RequestArguments Arguments { get; set; }
         public string[] UrlRoutes { get; set; }
-        public string Method { get; set; }
+        public HttpMethod Method { get; set; }
         public string? Handler { get; set; }
 
-        public ModelRequest(Dictionary<string, string> arguments, string[] urlRoutes, string method)
+        public ModelRequest(RequestArguments arguments, string[] urlRoutes, HttpMethod method)
         {
             Arguments = arguments;
             UrlRoutes = urlRoutes;
