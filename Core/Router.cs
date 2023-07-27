@@ -33,18 +33,17 @@ namespace HttpEngine.Core
 
         public RouterResponse Route(HttpListenerContext context)
         {
-            string rawUrlWithoutArgs = context.Request.RawUrl!.Split("?")[0]; // URL без GET-аргументов
+            string rawUrlWithoutArgs = "/" + context.Request.RawUrl!.Split("?")[0].Trim('/'); // URL без GET-аргументов
             List<string> urlRoutes = rawUrlWithoutArgs.Split("/").ToList();
-            urlRoutes.RemoveAt(0);
+            urlRoutes.RemoveAll(x => x == "");
 
             bool publicFile;
-            string route = "/" + urlRoutes[0];
             IModel? model = null;
             foreach (IModel modelEach in Models)
             {
                 foreach (string routeEach in modelEach.Routes)
                 {
-                    if (routeEach == route) model = modelEach;
+                    if (routeEach == rawUrlWithoutArgs) model = modelEach;
                 }
             }
             byte[] viewData;
@@ -77,8 +76,7 @@ namespace HttpEngine.Core
             if (model != null)
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
-
-                var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method);
+                var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method, context.Request.Cookies, context.Response.Cookies);
                 if (arguments.Arguments.ContainsKey("handler")) modelRequest.Handler = arguments.Arguments["handler"];
                 else modelRequest.Handler = "";
 
@@ -100,7 +98,7 @@ namespace HttpEngine.Core
                 } else
                 {
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
-                    var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method);
+                    var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method, context.Request.Cookies, context.Response.Cookies);
                     modelResponse = Error404Page.OnRequest(modelRequest);
                     viewData = modelResponse.ResponseData;
                     statusCode = 404;

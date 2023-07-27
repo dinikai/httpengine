@@ -4,7 +4,7 @@
     {
         Router? router;
         string? host;
-        IModel? layout;
+        Layout? layout;
 
         public HttpApplicationBuilder()
         {
@@ -20,11 +20,7 @@
         {
             string host = this.host ?? "http://localhost:8888/";
             string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
-            IModel layout = this.layout ?? new LayoutModel()
-            {
-                PublicDirectory = publicDirectory,
-                UseLayout = false,
-            };
+            Layout layout = this.layout ?? new Layout(publicDirectory);
 
             if (router == null)
             {

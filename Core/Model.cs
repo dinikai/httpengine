@@ -7,13 +7,18 @@ namespace HttpEngine.Core
         public List<string> Routes { get; set; } = new();
         public string PublicDirectory { get; set; }
         public IModel Error404 { get; set; }
-        public IModel Layout { get; set; }
+        public Layout Layout { get; set; }
         public bool UseLayout { get; set; } = true;
 
         public virtual ModelResponse OnRequest(ModelRequest request)
         {
             //throw new NotImplementedException();
             return new ModelResponse();
+        }
+
+        public virtual void OnUse()
+        {
+
         }
 
         protected byte[] File(string path, ModelRequest request)
@@ -25,8 +30,7 @@ namespace HttpEngine.Core
 
             if (UseLayout)
             {
-                ModelResponse layoutResponse = Layout.OnRequest(request);
-                byte[] layoutBuffer = layoutResponse.ResponseData;
+                byte[] layoutBuffer = Layout.OnRequest(request);
                 byte[] layout = ViewParser.Parse(ref layoutBuffer, new()
                 {
                     ["body"] = Encoding.UTF8.GetString(buffer),

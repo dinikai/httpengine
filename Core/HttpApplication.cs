@@ -17,9 +17,9 @@ namespace HttpEngine.Core
         /// Объект роутера
         /// </summary>
         Router router;
-        IModel layout;
+        Layout layout;
 
-        public HttpApplication(Router router, string host, IModel layout)
+        public HttpApplication(Router router, string host, Layout layout)
         {
             listener = new HttpListener();
             listener.Prefixes.Add(host);
@@ -40,12 +40,11 @@ namespace HttpEngine.Core
 
         public IModel UseModel<T>() where T : IModel, new()
         {
-            T model = new()
-            {
-                PublicDirectory = router.PublicDirectory,
-                Error404 = router.Error404Page,
-                Layout = layout
-            };
+            T model = new();
+            model.PublicDirectory ??= router.PublicDirectory;
+            model.Error404 ??= router.Error404Page;
+            model.Layout ??= layout;
+            model.OnUse();
             router.Models.Add(model);
 
             return model;
@@ -76,7 +75,7 @@ namespace HttpEngine.Core
                 listener.Start();
                 HttpListenerContext context = listener.GetContext();
 
-                // Обработать запрос роутером и получить RouterResponse
+                // Маршрутизировать запрос и получить RouterResponse
                 var routerResponse = router.Route(context);
 
                 // Формирование и отправка ответа
@@ -85,7 +84,7 @@ namespace HttpEngine.Core
                 context.Response.StatusCode = routerResponse.StatusCode;
                 output.Write(routerResponse.PageBuffer);
                 output.Flush();
-
+                
                 listener.Stop();
 
                 // Всякие выводы в консоль
