@@ -5,9 +5,9 @@ namespace HttpEngine.Core
     public class Model : IModel
     {
         public List<string> Routes { get; set; } = new();
-        public string PublicDirectory { get; set; }
-        public IModel Error404 { get; set; }
-        public string Layout { get; set; }
+        public string? PublicDirectory { get; set; }
+        public IModel? Error404 { get; set; }
+        public string? Layout { get; set; }
 
         public virtual ModelResponse OnRequest(ModelRequest request)
         {
@@ -15,7 +15,7 @@ namespace HttpEngine.Core
             return new ModelResponse();
         }
 
-        public byte[] File(string path, bool useLayout = true)
+        protected byte[] File(string path, bool useLayout = true)
         {
             FileStream file = new FileStream(Path.Combine(PublicDirectory, path), FileMode.Open);
             byte[] buffer = new byte[file.Length];

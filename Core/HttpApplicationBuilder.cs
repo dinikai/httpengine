@@ -3,7 +3,7 @@
     public class HttpApplicationBuilder
     {
         Router? router;
-        string? ip;
+        string? host;
         string? layout;
 
         public HttpApplicationBuilder()
@@ -12,13 +12,13 @@
         public HttpApplicationBuilder(HttpApplicationBuilderOptions options)
         {
             router = options.Router;
-            ip = options.Ip;
+            host = options.Host;
             layout = options.Layout;
         }
 
         public HttpApplication Build()
         {
-            string ip = this.ip ?? "http://localhost:8888/";
+            string ip = this.host ?? "http://localhost:8888/";
             string layout = this.layout ?? "_Layout.html";
 
             if (router == null)

@@ -19,10 +19,10 @@ namespace HttpEngine.Core
         Router router;
         string layout;
 
-        public HttpApplication(Router router, string ip, string layout)
+        public HttpApplication(Router router, string host, string layout)
         {
             listener = new HttpListener();
-            listener.Prefixes.Add(ip);
+            listener.Prefixes.Add(host);
 
             this.router = router;
             this.layout = layout;
@@ -30,9 +30,9 @@ namespace HttpEngine.Core
 
         public IModel UseModel(IModel model)
         {
-            model.PublicDirectory = router.PublicDirectory;
-            model.Error404 = router.Error404Page;
-            model.Layout = layout;
+            model.PublicDirectory ??= router.PublicDirectory;
+            model.Error404 ??= router.Error404Page;
+            model.Layout ??= layout;
             router.Models.Add(model);
 
             return model;
@@ -49,6 +49,16 @@ namespace HttpEngine.Core
             router.Models.Add(model);
 
             return model;
+        }
+
+        public void RemoveModel(IModel model)
+        {
+            router.Models.Remove(model);
+        }
+
+        public void RemoveAll<T>() where T : IModel
+        {
+            router.Models.RemoveAll(x => x is T);
         }
 
         /// <summary>
