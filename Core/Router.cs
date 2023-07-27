@@ -41,9 +41,13 @@ namespace HttpEngine.Core
             IModel? model = null;
             foreach (IModel modelEach in Models)
             {
+                if (modelEach.Routes.Count == 0)
+                    model = modelEach;
+
                 foreach (string routeEach in modelEach.Routes)
                 {
-                    if (routeEach == rawUrlWithoutArgs) model = modelEach;
+                    if (routeEach == rawUrlWithoutArgs)
+                        model = modelEach;
                 }
             }
             byte[] viewData;

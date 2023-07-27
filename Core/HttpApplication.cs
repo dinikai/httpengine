@@ -33,6 +33,9 @@ namespace HttpEngine.Core
             model.PublicDirectory ??= router.PublicDirectory;
             model.Error404 ??= router.Error404Page;
             model.Layout ??= layout;
+            model.Application = this;
+
+            model.OnUse();
             router.Models.Add(model);
 
             return model;
@@ -44,6 +47,8 @@ namespace HttpEngine.Core
             model.PublicDirectory ??= router.PublicDirectory;
             model.Error404 ??= router.Error404Page;
             model.Layout ??= layout;
+            model.Application = this;
+
             model.OnUse();
             router.Models.Add(model);
 

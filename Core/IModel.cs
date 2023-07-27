@@ -9,6 +9,7 @@ namespace HttpEngine.Core
         public string PublicDirectory { get; set; }
         public IModel Error404 { get; set; }
         public Layout Layout { get; set; }
+        public HttpApplication Application { get; set; }
 
         public ModelResponse OnRequest(ModelRequest request);
         public void OnUse();

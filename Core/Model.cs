@@ -9,6 +9,7 @@ namespace HttpEngine.Core
         public IModel Error404 { get; set; }
         public Layout Layout { get; set; }
         public bool UseLayout { get; set; } = true;
+        public HttpApplication Application { get; set; }
 
         public virtual ModelResponse OnRequest(ModelRequest request)
         {
@@ -40,6 +41,11 @@ namespace HttpEngine.Core
             {
                 return buffer;
             }
+        }
+
+        protected void RemoveModel()
+        {
+            Application.RemoveModel(this);
         }
     }
 }
