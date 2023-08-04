@@ -5,14 +5,16 @@ namespace HttpEngine.Core
 {
     public interface IModel
     {
-        public List<string> Routes { get; set; }
-        public string PublicDirectory { get; set; }
-        public IModel Error404 { get; set; }
-        public Layout Layout { get; set; }
-        public HttpApplication Application { get; set; }
+        List<string> Routes { get; set; }
+        string PublicDirectory { get; set; }
+        IModel Error404 { get; set; }
+        Layout Layout { get; set; }
+        HttpApplication Application { get; set; }
 
-        public ModelResponse OnRequest(ModelRequest request);
-        public void OnUse();
+        ModelResponse OnRequest(ModelRequest request);
+        ModelResponse? CallModel<T>(ModelRequest request) where T : IModel;
+        ModelResponse Redirect(string url);
+        void OnUse();
     }
 
     public class ModelRequest
@@ -37,8 +39,14 @@ namespace HttpEngine.Core
     public class ModelResponse
     {
         public byte[] ResponseData { get; set; } = Array.Empty<byte>();
+        public WebHeaderCollection Headers { get; set; }
+        public int StatusCode { get; set; }
 
-        public ModelResponse() { }
-        public ModelResponse(byte[] responseData) => ResponseData = responseData;
+        public ModelResponse()
+        {
+            Headers = new();
+            StatusCode = -1;
+        }
+        public ModelResponse(byte[] responseData) : this() => ResponseData = responseData;
     }
 }

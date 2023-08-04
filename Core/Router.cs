@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 
@@ -13,46 +14,28 @@ namespace HttpEngine.Core
         /// Директория с публичными файлами, доступными по интернету
         /// </summary>
         public string PublicDirectory { get; set; }
+        public string StaticDirectory { get; set; }
 
         /// <summary>
         /// Страница-заглушка при 404
         /// </summary>
-        public IModel Error404Page { get; set; }
+        public IModel Error404 { get; set; }
 
         /// <summary>
         /// Список моделей
         /// </summary>
         public List<IModel> Models { get; set; }
 
-        public Router(string publicDirectory, IModel error404Page)
+        public Router(string publicDirectory, string staticDirectory, IModel error404)
         {
             PublicDirectory = publicDirectory;
-            Error404Page = error404Page;
+            StaticDirectory = staticDirectory;
+            Error404 = error404;
             Models = new List<IModel>();
         }
 
         public RouterResponse Route(HttpListenerContext context)
         {
-            string rawUrlWithoutArgs = "/" + context.Request.RawUrl!.Split("?")[0].Trim('/'); // URL без GET-аргументов
-            List<string> urlRoutes = rawUrlWithoutArgs.Split("/").ToList();
-            urlRoutes.RemoveAll(x => x == "");
-
-            bool publicFile;
-            IModel? model = null;
-            foreach (IModel modelEach in Models)
-            {
-                if (modelEach.Routes.Count == 0)
-                    model = modelEach;
-
-                foreach (string routeEach in modelEach.Routes)
-                {
-                    if (routeEach == rawUrlWithoutArgs)
-                        model = modelEach;
-                }
-            }
-            byte[] viewData;
-            ModelResponse modelResponse;
-
             HttpMethod method;
             switch (context.Request.HttpMethod)
             {
@@ -75,7 +58,60 @@ namespace HttpEngine.Core
                 arguments = new MultipartRequestArguments(Extensions.GetPostParams(reader.ReadToEnd()), new());
             }
 
+            string rawUrlWithoutArgs = "/" + context.Request.RawUrl!.Split("?")[0].Trim('/'); // URL без GET-аргументов
+            List<string> urlRoutes = rawUrlWithoutArgs.Split("/").ToList();
+            urlRoutes.RemoveAll(x => x == "");
+            List<(string Name, string Value)> urlArguments = new();
+
+            IModel? model = null;
+            foreach (IModel modelEach in Models)
+            {
+                if (!modelEach.Routes.Any())
+                    model = modelEach;
+
+                foreach (string routeEach in modelEach.Routes)
+                {
+                    bool nextRoute = false;
+                    List<(string, string)> eachUrlArguments = new();
+                    List<string> modelRoutes = routeEach.Split("/").ToList();
+                    modelRoutes.RemoveAll(x => x == "");
+
+                    if (urlRoutes.Count != modelRoutes.Count)
+                        continue;
+
+                    for (int i = 0; i < urlRoutes.Count; i++)
+                    {
+                        if (modelRoutes[i].StartsWith("{") && modelRoutes[i].EndsWith("}"))
+                        {
+                            eachUrlArguments.Add((modelRoutes[i].Trim('{', '}'), urlRoutes[i]));
+                        }
+                        else
+                        {
+                            if (modelRoutes[i] != urlRoutes[i])
+                            {
+                                nextRoute = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (nextRoute)
+                        continue;
+                    urlArguments = eachUrlArguments;
+                    model = modelEach;
+                }
+            }
+            for (int i = 0; i < urlArguments.Count; i++)
+            {
+                if (!arguments.Arguments.ContainsKey(urlArguments[i].Name))
+                    arguments.Arguments.Add(urlArguments[i].Name, urlArguments[i].Value);
+            }
+
+            byte[] viewData;
+            ModelResponse modelResponse;
+
             int statusCode = 200;
+            WebHeaderCollection headers = new();
+            bool publicFile;
             // Если модель существует,
             if (model != null)
             {
@@ -87,10 +123,14 @@ namespace HttpEngine.Core
                 modelResponse = model.OnRequest(modelRequest);
                 viewData = modelResponse.ResponseData;
                 publicFile = false;
-            } else
+                headers = modelResponse.Headers;
+                if (modelResponse.StatusCode != -1)
+                    statusCode = modelResponse.StatusCode;
+            }
+            else
             {
                 // Иначе пытаемся найти сырой файл
-                string path = @$"{PublicDirectory}{rawUrlWithoutArgs}";
+                string path = @$"{StaticDirectory}{rawUrlWithoutArgs}";
                 publicFile = true;
 
                 if (File.Exists(path))
@@ -99,13 +139,15 @@ namespace HttpEngine.Core
                     viewData = new byte[file.Length];
                     file.Read(viewData, 0, viewData.Length);
                     file.Close();
-                } else
+                }
+                else
                 {
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
                     var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), method, context.Request.Cookies, context.Response.Cookies);
-                    modelResponse = Error404Page.OnRequest(modelRequest);
+                    modelResponse = Error404.OnRequest(modelRequest);
                     viewData = modelResponse.ResponseData;
                     statusCode = 404;
+                    headers = modelResponse.Headers;
                 }
             }
 
@@ -116,7 +158,8 @@ namespace HttpEngine.Core
                 PageBuffer = viewData,
                 Arguments = arguments,
                 PublicFile = publicFile,
-                StatusCode = statusCode
+                StatusCode = statusCode,
+                Headers = headers
             };
         }
     }
@@ -131,5 +174,6 @@ namespace HttpEngine.Core
         public RequestArguments Arguments { get; set; }
         public bool PublicFile { get; set; }
         public int StatusCode { get; set; }
+        public WebHeaderCollection Headers { get; set; }
     }
 }

@@ -5,6 +5,7 @@
         Router? router;
         string? host;
         Layout? layout;
+        string? publicDirectory, staticDirectory;
 
         public HttpApplicationBuilder()
         {
@@ -14,13 +15,21 @@
             router = options.Router;
             host = options.Host;
             layout = options.Layout;
+            publicDirectory = options.PublicDirectory;
+            staticDirectory = options.StaticDirectory;
         }
 
         public HttpApplication Build()
         {
             string host = this.host ?? "http://localhost:8888/";
-            string publicDirectory = $@"{Environment.CurrentDirectory}/Public";
+            string publicDirectory = this.publicDirectory ?? $@"{Environment.CurrentDirectory}/Public";
+            string staticDirectory = this.staticDirectory ?? $@"{Environment.CurrentDirectory}/Static";
             Layout layout = this.layout ?? new Layout(publicDirectory);
+
+            if (!Directory.Exists(publicDirectory))
+                Directory.CreateDirectory(publicDirectory);
+            if (!Directory.Exists(staticDirectory))
+                Directory.CreateDirectory(staticDirectory);
 
             if (router == null)
             {
@@ -32,7 +41,8 @@
 
                 router = new Router(
                     publicDirectory: publicDirectory,
-                    error404Page: error404
+                    staticDirectory: staticDirectory,
+                    error404: error404
                 );
             }
 

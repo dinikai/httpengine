@@ -7,7 +7,13 @@ namespace HttpEngine.Core
     {
         public static Dictionary<string, string> ToDictionary(this NameValueCollection nvc)
         {
-            return nvc.AllKeys.ToDictionary(k => k, k => nvc[k]);
+            try
+            {
+                return nvc.AllKeys.ToDictionary(k => k, k => nvc[k])!;
+            } catch
+            {
+                return new();
+            }
         }
 
         public static Dictionary<string, string> GetPostParams(string rawData)

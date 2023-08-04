@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net;
+using System.Text;
 
 namespace HttpEngine.Core
 {
@@ -41,6 +42,28 @@ namespace HttpEngine.Core
             {
                 return buffer;
             }
+        }
+
+        public ModelResponse? CallModel<T>(ModelRequest request) where T : IModel
+        {
+            IModel? model = Application.Router.Models.FirstOrDefault(x => x is T);
+            if (model == null)
+                return null;
+
+            return model.OnRequest(request);
+        }
+
+        public ModelResponse Redirect(string url)
+        {
+            WebHeaderCollection headers = new()
+            {
+                { "Location", url }
+            };
+            return new ModelResponse()
+            {
+                Headers = headers,
+                StatusCode = 301
+            };
         }
 
         protected void RemoveModel()
