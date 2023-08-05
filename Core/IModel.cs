@@ -12,8 +12,8 @@ namespace HttpEngine.Core
         Layout Layout { get; set; }
         HttpApplication Application { get; set; }
 
-        ModelResponse OnRequest(ModelRequest request);
-        ModelResponse? CallModel<T>(ModelRequest request) where T : IModel;
+        ModelResult OnRequest(ModelRequest request);
+        ModelResult? CallModel<T>(ModelRequest request) where T : IModel;
         void OnUse();
     }
 
@@ -43,17 +43,17 @@ namespace HttpEngine.Core
         }
     }
 
-    public class ModelResponse
+    public class ModelResult
     {
         public byte[] ResponseData { get; set; } = Array.Empty<byte>();
         public WebHeaderCollection Headers { get; set; }
         public int StatusCode { get; set; }
 
-        public ModelResponse()
+        public ModelResult()
         {
             Headers = new();
             StatusCode = -1;
         }
-        public ModelResponse(byte[] responseData) : this() => ResponseData = responseData;
+        public ModelResult(byte[] responseData) : this() => ResponseData = responseData;
     }
 }

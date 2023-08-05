@@ -79,12 +79,12 @@ namespace HttpEngine.Core
             Router.Models.RemoveAll(x => predicate(x));
         }
 
-        public void MapGet(string route, Func<ModelRequest, ModelResponse> func)
+        public void MapGet(string route, Func<ModelRequest, ModelResult> func)
         {
             Router.Maps.Insert(0, new Map(HttpMethod.Get, route, func));
         }
 
-        public void MapPost(string route, Func<ModelRequest, ModelResponse> func)
+        public void MapPost(string route, Func<ModelRequest, ModelResult> func)
         {
             Router.Maps.Insert(0, new Map(HttpMethod.Post, route, func));
         }

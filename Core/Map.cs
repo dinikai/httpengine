@@ -10,9 +10,9 @@ namespace HttpEngine.Core
     {
         public HttpMethod Method { get; set; }
         public string Route { get; set; }
-        public Func<ModelRequest, ModelResponse> Func { get; set; }
+        public Func<ModelRequest, ModelResult> Func { get; set; }
 
-        public Map(HttpMethod method, string route, Func<ModelRequest, ModelResponse> func)
+        public Map(HttpMethod method, string route, Func<ModelRequest, ModelResult> func)
         {
             Method = method;
             Route = route;

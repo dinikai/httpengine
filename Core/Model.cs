@@ -12,10 +12,10 @@ namespace HttpEngine.Core
         public bool UseLayout { get; set; } = true;
         public HttpApplication Application { get; set; }
 
-        public virtual ModelResponse OnRequest(ModelRequest request)
+        public virtual ModelResult OnRequest(ModelRequest request)
         {
             //throw new NotImplementedException();
-            return new ModelResponse();
+            return new ModelResult();
         }
 
         public virtual void OnUse()
@@ -44,7 +44,7 @@ namespace HttpEngine.Core
             }
         }
 
-        public ModelResponse? CallModel<T>(ModelRequest request) where T : IModel
+        public ModelResult? CallModel<T>(ModelRequest request) where T : IModel
         {
             IModel? model = Application.Router.Models.FirstOrDefault(x => x is T);
             if (model == null)
@@ -53,13 +53,13 @@ namespace HttpEngine.Core
             return model.OnRequest(request);
         }
 
-        public static ModelResponse Redirect(string url)
+        public static ModelResult Redirect(string url)
         {
             WebHeaderCollection headers = new()
             {
                 { "Location", url }
             };
-            return new ModelResponse()
+            return new ModelResult()
             {
                 Headers = headers,
                 StatusCode = 302

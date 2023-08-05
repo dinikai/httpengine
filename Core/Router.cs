@@ -37,7 +37,7 @@ namespace HttpEngine.Core
             Maps = new List<Map>();
         }
 
-        public RouterResponse Route(HttpListenerContext context)
+        public RouterResult Route(HttpListenerContext context)
         {
             HttpMethod method;
             switch (context.Request.HttpMethod)
@@ -142,7 +142,7 @@ namespace HttpEngine.Core
             }
 
             byte[] viewData;
-            ModelResponse modelResponse;
+            ModelResult modelResponse;
 
             int statusCode = 200;
             WebHeaderCollection headers = new();
@@ -235,7 +235,7 @@ namespace HttpEngine.Core
             }
 
             // Компонуем и возвращаем ответ
-            return new RouterResponse()
+            return new RouterResult()
             {
                 UrlRoutes = urlRoutes.ToArray(),
                 PageBuffer = viewData,
@@ -251,7 +251,7 @@ namespace HttpEngine.Core
     /// <summary>
     /// Структура, содержащая ответ от роутера (страница, которую надо показать, GET-аргументы, код статуса ответа и т.д.)
     /// </summary>
-    public struct RouterResponse
+    public struct RouterResult
     {
         public string[] UrlRoutes { get; set; }
         public byte[] PageBuffer { get; set; }
