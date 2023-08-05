@@ -2,36 +2,32 @@
 {
     public class HttpApplicationBuilder
     {
-        Router? router;
-        string? host;
-        Layout? layout;
-        string? publicDirectory, staticDirectory;
+        HttpApplicationBuilderOptions options;
 
         public HttpApplicationBuilder()
         {
+            options = new();
         }
-        public HttpApplicationBuilder(HttpApplicationBuilderOptions options)
+
+        public HttpApplicationBuilder(HttpApplicationBuilderOptions options) : this()
         {
-            router = options.Router;
-            host = options.Host;
-            layout = options.Layout;
-            publicDirectory = options.PublicDirectory;
-            staticDirectory = options.StaticDirectory;
+            this.options = options;
         }
 
         public HttpApplication Build()
         {
-            string host = this.host ?? "http://localhost:8888/";
-            string publicDirectory = this.publicDirectory ?? $@"{Environment.CurrentDirectory}/Public";
-            string staticDirectory = this.staticDirectory ?? $@"{Environment.CurrentDirectory}/Static";
-            Layout layout = this.layout ?? new Layout(publicDirectory);
+            string host = options.Host ?? "http://localhost:8080/";
+            string publicDirectory = options.PublicDirectory ?? $@"{Environment.CurrentDirectory}/Public";
+            string staticDirectory = options.StaticDirectory ?? $@"{Environment.CurrentDirectory}/Static";
+            Layout layout = options.Layout ?? new Layout(publicDirectory);
+            CacheControl cacheControl = options.CacheControl ?? CacheControl.Public;
 
             if (!Directory.Exists(publicDirectory))
                 Directory.CreateDirectory(publicDirectory);
             if (!Directory.Exists(staticDirectory))
                 Directory.CreateDirectory(staticDirectory);
 
-            if (router == null)
+            if (options.Router == null)
             {
                 var error404 = new Model()
                 {
@@ -39,14 +35,14 @@
                     Layout = layout,
                 };
 
-                router = new Router(
+                options.Router = new Router(
                     publicDirectory: publicDirectory,
                     staticDirectory: staticDirectory,
                     error404: error404
                 );
             }
 
-            var application = new HttpApplication(router, host, layout);
+            var application = new HttpApplication(options.Router, host, layout, cacheControl);
             return application;
         }
     }

@@ -7,5 +7,6 @@
         public Layout? Layout { get; set; }
         public string? PublicDirectory { get; set; }
         public string? StaticDirectory { get; set; }
+        public CacheControl? CacheControl { get; set; }
     }
 }

@@ -33,7 +33,7 @@ namespace HttpEngine.Core
             if (UseLayout)
             {
                 byte[] layoutBuffer = Layout.OnRequest(request);
-                byte[] layout = ViewParser.Parse(ref layoutBuffer, new()
+                byte[] layout = layoutBuffer.ParseView(new()
                 {
                     ["body"] = Encoding.UTF8.GetString(buffer),
                 }, false);
@@ -53,7 +53,7 @@ namespace HttpEngine.Core
             return model.OnRequest(request);
         }
 
-        public ModelResponse Redirect(string url)
+        public static ModelResponse Redirect(string url)
         {
             WebHeaderCollection headers = new()
             {
@@ -62,7 +62,7 @@ namespace HttpEngine.Core
             return new ModelResponse()
             {
                 Headers = headers,
-                StatusCode = 301
+                StatusCode = 302
             };
         }
 

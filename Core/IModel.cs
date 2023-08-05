@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.Net;
 
 namespace HttpEngine.Core
@@ -13,7 +14,6 @@ namespace HttpEngine.Core
 
         ModelResponse OnRequest(ModelRequest request);
         ModelResponse? CallModel<T>(ModelRequest request) where T : IModel;
-        ModelResponse Redirect(string url);
         void OnUse();
     }
 
@@ -21,18 +21,25 @@ namespace HttpEngine.Core
     {
         public RequestArguments Arguments { get; set; }
         public string[] UrlRoutes { get; set; }
+        public string Url { get; set; }
+        public string RawUrl { get; set; }
         public HttpMethod Method { get; set; }
         public string? Handler { get; set; }
         public CookieCollection RequestCookies { get; set; }
         public CookieCollection ResponseCookies { get; set; }
+        public NameValueCollection Headers { get; set; }
 
-        public ModelRequest(RequestArguments arguments, string[] urlRoutes, HttpMethod method, CookieCollection requestCookies, CookieCollection responseCookies)
+        public ModelRequest(RequestArguments arguments, string[] urlRoutes, string url, string rawUrl, HttpMethod method,
+            CookieCollection requestCookies, CookieCollection responseCookies, NameValueCollection headers)
         {
             Arguments = arguments;
             UrlRoutes = urlRoutes;
+            Url = url;
+            RawUrl = rawUrl;
             Method = method;
             RequestCookies = requestCookies;
             ResponseCookies = responseCookies;
+            Headers = headers;
         }
     }
 
