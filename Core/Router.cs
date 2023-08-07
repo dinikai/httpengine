@@ -27,14 +27,16 @@ namespace HttpEngine.Core
         /// </summary>
         public List<IModel> Models { get; set; }
         public List<Map> Maps { get; set; }
+        public string Handler { get; set; }
 
-        public Router(string publicDirectory, string staticDirectory, IModel error404)
+        public Router(string publicDirectory, string staticDirectory, IModel error404, string handler)
         {
             PublicDirectory = publicDirectory;
             StaticDirectory = staticDirectory;
             Error404 = error404;
             Models = new List<IModel>();
             Maps = new List<Map>();
+            Handler = handler;
         }
 
         public RouterResult Route(HttpListenerContext context)
@@ -154,7 +156,7 @@ namespace HttpEngine.Core
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
                 var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
                     context.Request.Cookies, context.Response.Cookies, context.Request.Headers);
-                if (arguments.Arguments.ContainsKey("handler")) modelRequest.Handler = arguments.Arguments["handler"];
+                if (arguments.Arguments.ContainsKey(Handler)) modelRequest.Handler = arguments.Arguments[Handler];
                 else modelRequest.Handler = "";
 
                 modelResponse = model.OnRequest(modelRequest);

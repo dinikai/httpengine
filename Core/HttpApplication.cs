@@ -20,23 +20,25 @@ namespace HttpEngine.Core
         /// </summary>
         public Router Router { get; set; }
         public CacheControl CacheControl { get; set; }
-        Layout layout;
-
-        public HttpApplication(Router router, string host, Layout layout, CacheControl cacheControl)
+        public Layout Layout { get; set; }
+        
+        public HttpApplication(Router router, string[] hosts, Layout layout, CacheControl cacheControl)
         {
             listener = new HttpListener();
-            listener.Prefixes.Add(host);
+            foreach (string host in hosts)
+                listener.Prefixes.Add(host);
 
             Router = router;
             CacheControl = cacheControl;
-            this.layout = layout;
+            Layout = layout;
+
         }
 
         public IModel UseModel(IModel model)
         {
             model.PublicDirectory ??= Router.PublicDirectory;
             model.Error404 ??= Router.Error404;
-            model.Layout ??= layout;
+            model.Layout ??= Layout;
             model.Application = this;
 
             Router.Models.Insert(0, model);
@@ -54,7 +56,7 @@ namespace HttpEngine.Core
         public IModel Use404(IModel model)
         {
             model.PublicDirectory ??= Router.PublicDirectory;
-            model.Layout ??= layout;
+            model.Layout ??= Layout;
             model.Application = this;
 
             Router.Error404 = model;

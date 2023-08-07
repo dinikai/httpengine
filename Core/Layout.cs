@@ -1,14 +1,17 @@
-﻿using System.Text;
-
-namespace HttpEngine.Core
+﻿namespace HttpEngine.Core
 {
     public class Layout
     {
-        public string PublicDirectory { get; set; }
+        public string PublicDirectory { get; set; } = "";
 
         public Layout(string publicDirectory)
         {
             PublicDirectory = publicDirectory;
+        }
+
+        public Layout()
+        {
+            
         }
 
         public virtual byte[] OnRequest(ModelRequest request)

@@ -72,7 +72,7 @@ namespace HttpEngine.Core
         {
             string @string = Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "@"));
             int indexOfSection = @string.IndexOf("!==");
-            int indexOfEnd = @string.IndexOf("==!");
+            int indexOfEnd = @string.LastIndexOf("==!");
             if (indexOfSection != -1 && indexOfEnd != -1 && removeSections)
                 @string = @string.Remove(indexOfSection, indexOfEnd - indexOfSection + 3);
 

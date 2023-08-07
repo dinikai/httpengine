@@ -16,11 +16,13 @@
 
         public HttpApplication Build()
         {
-            string host = options.Host ?? "http://localhost:8080/";
+            string[] hosts = options.Hosts ?? new string[] { "http://localhost:8080/" };
             string publicDirectory = options.PublicDirectory ?? $@"{Environment.CurrentDirectory}/Public";
             string staticDirectory = options.StaticDirectory ?? $@"{Environment.CurrentDirectory}/Static";
             Layout layout = options.Layout ?? new Layout(publicDirectory);
+            layout.PublicDirectory = publicDirectory;
             CacheControl cacheControl = options.CacheControl ?? CacheControl.Public;
+            string handler = options.Handler ?? "h";
 
             if (!Directory.Exists(publicDirectory))
                 Directory.CreateDirectory(publicDirectory);
@@ -38,11 +40,12 @@
                 options.Router = new Router(
                     publicDirectory: publicDirectory,
                     staticDirectory: staticDirectory,
-                    error404: error404
+                    error404: error404,
+                    handler: handler
                 );
             }
 
-            var application = new HttpApplication(options.Router, host, layout, cacheControl);
+            var application = new HttpApplication(options.Router, hosts, layout, cacheControl);
             return application;
         }
     }
