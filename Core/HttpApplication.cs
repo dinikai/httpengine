@@ -141,10 +141,20 @@ namespace HttpEngine.Core
                 if (routerResponse.ContentType != null)
                     context.Response.ContentType = routerResponse.ContentType;
                 context.Response.Headers.Add("ETag", $"\"{Convert.ToBase64String(SHA1.HashData(routerResponse.PageBuffer))}\"");
-                output.Write(routerResponse.PageBuffer);
-                output.Flush();
-                
-                listener.Stop();
+
+                try
+                {
+                    output.Write(routerResponse.PageBuffer);
+                    output.Flush();
+                } catch (Exception e)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(e.Message);
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                } finally
+                {
+                    listener.Stop();
+                }
 
                 // Всякие выводы в консоль
                 Console.WriteLine($"#{++totalRequests}: {context.Request.Url}");

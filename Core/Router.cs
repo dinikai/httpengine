@@ -39,8 +39,10 @@ namespace HttpEngine.Core
             Handler = handler;
         }
 
-        public RouterResult Route(HttpListenerContext context)
+        public RouterResult Route(HttpListenerContext context, List<object>? skip = null)
         {
+            skip ??= new();
+
             HttpMethod method;
             switch (context.Request.HttpMethod)
             {
@@ -63,6 +65,7 @@ namespace HttpEngine.Core
                 arguments = new MultipartRequestArguments(Extensions.GetPostParams(reader.ReadToEnd()), new());
             }
 
+            string route = "";
             string rawUrlWithoutArgs = "/" + context.Request.RawUrl!.Split("?")[0].Trim('/'); // URL без GET-аргументов
             List<string> urlRoutes = rawUrlWithoutArgs.Split("/").ToList();
             urlRoutes.RemoveAll(x => x == "");
@@ -71,6 +74,9 @@ namespace HttpEngine.Core
             Map? map = null;
             foreach (Map mapEach in Maps)
             {
+                if (skip.Contains(mapEach))
+                    continue;
+
                 bool nextRoute = false;
                 List<(string, string)> eachUrlArguments = new();
                 List<string> routeParts = mapEach.Route.Split("/").ToList();
@@ -97,12 +103,16 @@ namespace HttpEngine.Core
                 if (nextRoute)
                     continue;
                 urlArguments = eachUrlArguments;
+                route = mapEach.Route;
                 map = mapEach;
             }
 
             IModel? model = null;
             foreach (IModel modelEach in Models)
             {
+                if (skip.Contains(modelEach))
+                    continue;
+
                 if (!modelEach.Routes.Any())
                     model = modelEach;
 
@@ -134,6 +144,7 @@ namespace HttpEngine.Core
                     if (nextRoute)
                         continue;
                     urlArguments = eachUrlArguments;
+                    route = routeEach;
                     model = modelEach;
                 }
             }
@@ -155,11 +166,16 @@ namespace HttpEngine.Core
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
                 var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers);
+                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
                 if (arguments.Arguments.ContainsKey(Handler)) modelRequest.Handler = arguments.Arguments[Handler];
                 else modelRequest.Handler = "";
 
                 modelResponse = model.OnRequest(modelRequest);
+
+                skip.Add(model);
+                if (modelResponse is SkipResult)
+                    return Route(context, skip);
+
                 viewData = modelResponse.ResponseData;
                 publicFile = false;
                 headers = modelResponse.Headers;
@@ -169,11 +185,16 @@ namespace HttpEngine.Core
             else if (map != null)
             {
                 var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers);
+                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
                 if (arguments.Arguments.ContainsKey("handler")) modelRequest.Handler = arguments.Arguments["handler"];
                 else modelRequest.Handler = "";
 
                 modelResponse = map.Func(modelRequest);
+
+                skip.Add(map);
+                if (modelResponse is SkipResult)
+                    return Route(context, skip);
+
                 viewData = modelResponse.ResponseData;
                 publicFile = false;
                 headers = modelResponse.Headers;
@@ -228,7 +249,7 @@ namespace HttpEngine.Core
                 {
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
                     var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                        context.Request.Cookies, context.Response.Cookies, context.Request.Headers);
+                        context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
                     modelResponse = Error404.OnRequest(modelRequest);
                     viewData = modelResponse.ResponseData;
                     statusCode = 404;

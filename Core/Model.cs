@@ -53,6 +53,11 @@ namespace HttpEngine.Core
             return model.OnRequest(request);
         }
 
+        public static SkipResult Skip()
+        {
+            return new SkipResult();
+        }
+
         public static ModelResult Redirect(string url)
         {
             WebHeaderCollection headers = new()

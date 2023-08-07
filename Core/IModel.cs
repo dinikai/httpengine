@@ -28,9 +28,10 @@ namespace HttpEngine.Core
         public CookieCollection RequestCookies { get; set; }
         public CookieCollection ResponseCookies { get; set; }
         public NameValueCollection Headers { get; set; }
+        public string Route { get; set; }
 
         public ModelRequest(RequestArguments arguments, string[] urlRoutes, string url, string rawUrl, HttpMethod method,
-            CookieCollection requestCookies, CookieCollection responseCookies, NameValueCollection headers)
+            CookieCollection requestCookies, CookieCollection responseCookies, NameValueCollection headers, string route)
         {
             Arguments = arguments;
             UrlRoutes = urlRoutes;
@@ -40,6 +41,7 @@ namespace HttpEngine.Core
             RequestCookies = requestCookies;
             ResponseCookies = responseCookies;
             Headers = headers;
+            Route = route;
         }
     }
 
