@@ -1,6 +1,7 @@
 ﻿using System.Collections.Specialized;
 using System.Text;
 using System.Web;
+using static System.Collections.Specialized.BitVector32;
 
 namespace HttpEngine.Core
 {
@@ -32,7 +33,7 @@ namespace HttpEngine.Core
             return postParams;
         }
 
-        public static string Between(this string @this, string a, string b, bool remove = false)
+        public static string Between(this string @this, string a, string b)
         {
             int posA = @this.IndexOf(a);
             int posB = @this.IndexOf(b, posA + 1);
@@ -49,11 +50,18 @@ namespace HttpEngine.Core
             {
                 return "Between error: PosA > PosB";
             }
+            
+            return @this[adjustedPosA..posB];
+        }
 
-            if (remove)
-                return @this.Remove(posA, posB - posA + b.Length);
-            else
-                return @this.Substring(adjustedPosA, posB - adjustedPosA);
+        public static string BetweenAndRemove(this string @this, string a, string b, ref string newString)
+        {
+            int posA = @this.IndexOf(a);
+            int posB = @this.IndexOf(b, posA + 1);
+
+            string between = @this.Between(a, b);
+            newString = @this.Remove(posA, posB - posA + b.Length);
+            return between;
         }
 
         public static string ReplaceFirst(this string @this, string oldValue, string newValue)
@@ -93,11 +101,7 @@ namespace HttpEngine.Core
 
         public static string GetSection(this byte[] bytes, string sectionName, Dictionary<string, object> dictionary)
         {
-            string data = Encoding.UTF8.GetString(bytes);
-            string section = data.Between($"!=={sectionName}", "==!");
-            section = ParseSection(Encoding.UTF8.GetBytes(section), dictionary);
-
-            return section;
+            return ParseSection(Encoding.UTF8.GetBytes(bytes.GetSection(sectionName)), dictionary);
         }
 
         public static string GetSection(this byte[] bytes, string sectionName)

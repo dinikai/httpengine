@@ -93,10 +93,18 @@ namespace HttpEngine.Core
                     }
                     else
                     {
-                        if (routeParts[i] != urlRoutes[i] || mapEach.Method != method)
+                        if (routeParts[i] != urlRoutes[i])
                         {
                             nextRoute = true;
                             break;
+                        }
+                        if (mapEach.Method != null)
+                        {
+                            if (mapEach.Method != method)
+                            {
+                                nextRoute = true;
+                                break;
+                            }
                         }
                     }
                 }

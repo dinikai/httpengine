@@ -31,7 +31,6 @@ namespace HttpEngine.Core
             Router = router;
             CacheControl = cacheControl;
             Layout = layout;
-
         }
 
         public IModel UseModel(IModel model)
@@ -81,6 +80,11 @@ namespace HttpEngine.Core
             Router.Models.RemoveAll(x => predicate(x));
         }
 
+        public void Map(string route, Func<ModelRequest, ModelResult> func)
+        {
+            Router.Maps.Insert(0, new Map(null, route, func));
+        }
+
         public void MapGet(string route, Func<ModelRequest, ModelResult> func)
         {
             Router.Maps.Insert(0, new Map(HttpMethod.Get, route, func));
@@ -98,10 +102,9 @@ namespace HttpEngine.Core
         {
             Console.Write($"Server started at ");
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"{listener.Prefixes.ToArray()[0]}");
+            Console.WriteLine(string.Join(", ", listener.Prefixes.ToArray()));
             Console.ForegroundColor = ConsoleColor.Gray;
 
-            long totalRequests = 0;
             while (true)
             {
                 listener.Start();
@@ -146,6 +149,7 @@ namespace HttpEngine.Core
                 {
                     output.Write(routerResponse.PageBuffer);
                     output.Flush();
+                    output.Close();
                 } catch (Exception e)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -157,7 +161,7 @@ namespace HttpEngine.Core
                 }
 
                 // Всякие выводы в консоль
-                Console.WriteLine($"#{++totalRequests}: {context.Request.Url}");
+                Console.WriteLine($"{context.Request.HttpMethod} {context.Request.Url}");
             }
         }
     }
