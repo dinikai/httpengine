@@ -47,15 +47,16 @@ namespace HttpEngine.Core
 
     public class ModelResult
     {
-        public byte[] ResponseData { get; set; } = Array.Empty<byte>();
+        public ModelFile File { get; set; }
         public WebHeaderCollection Headers { get; set; }
         public int StatusCode { get; set; }
 
         public ModelResult()
         {
+            File = new(Array.Empty<byte>());
             Headers = new();
             StatusCode = -1;
         }
-        public ModelResult(byte[] responseData) : this() => ResponseData = responseData;
+        public ModelResult(ModelFile file) : this() => File = file;
     }
 }

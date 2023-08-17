@@ -23,7 +23,7 @@ namespace HttpEngine.Core
 
         }
 
-        protected byte[] File(string path, ModelRequest request)
+        protected ModelFile File(string path, ModelRequest request)
         {
             FileStream file = new FileStream(Path.Combine(PublicDirectory, path), FileMode.Open);
             byte[] buffer = new byte[file.Length];
@@ -32,15 +32,15 @@ namespace HttpEngine.Core
 
             if (UseLayout)
             {
-                byte[] layoutBuffer = Layout.OnRequest(request);
-                byte[] layout = layoutBuffer.ParseView(new()
+                ModelFile layout = Layout.OnRequest(request);
+                layout.ParseView(new()
                 {
                     ["body"] = Encoding.UTF8.GetString(buffer),
                 }, false);
                 return layout;
             } else
             {
-                return buffer;
+                return new ModelFile(buffer);
             }
         }
 

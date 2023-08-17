@@ -162,7 +162,7 @@ namespace HttpEngine.Core
                     arguments.Arguments.Add(urlArguments[i].Name, urlArguments[i].Value);
             }
 
-            byte[] viewData;
+            ModelFile viewData;
             ModelResult modelResponse;
 
             int statusCode = 200;
@@ -184,7 +184,7 @@ namespace HttpEngine.Core
                 if (modelResponse is SkipResult)
                     return Route(context, skip);
 
-                viewData = modelResponse.ResponseData;
+                viewData = modelResponse.File;
                 publicFile = false;
                 headers = modelResponse.Headers;
                 if (modelResponse.StatusCode != -1)
@@ -203,7 +203,7 @@ namespace HttpEngine.Core
                 if (modelResponse is SkipResult)
                     return Route(context, skip);
 
-                viewData = modelResponse.ResponseData;
+                viewData = modelResponse.File;
                 publicFile = false;
                 headers = modelResponse.Headers;
                 if (modelResponse.StatusCode != -1)
@@ -218,8 +218,8 @@ namespace HttpEngine.Core
                 if (File.Exists(path))
                 {
                     FileStream file = new FileStream(path, FileMode.Open);
-                    viewData = new byte[file.Length];
-                    file.Read(viewData, 0, viewData.Length);
+                    viewData = new(new byte[file.Length]);
+                    file.Read(viewData.Data, 0, viewData.Data.Length);
                     file.Close();
 
                     DateTime lastModified = File.GetLastAccessTimeUtc(path);
@@ -259,7 +259,7 @@ namespace HttpEngine.Core
                     var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
                         context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
                     modelResponse = Error404.OnRequest(modelRequest);
-                    viewData = modelResponse.ResponseData;
+                    viewData = modelResponse.File;
                     statusCode = 404;
                     headers = modelResponse.Headers;
                 }
@@ -269,7 +269,7 @@ namespace HttpEngine.Core
             return new RouterResult()
             {
                 UrlRoutes = urlRoutes.ToArray(),
-                PageBuffer = viewData,
+                PageBuffer = viewData.Data,
                 Arguments = arguments,
                 PublicFile = publicFile,
                 StatusCode = statusCode,

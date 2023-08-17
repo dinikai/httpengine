@@ -75,41 +75,5 @@ namespace HttpEngine.Core
 
             return @this.Remove(startindex, oldValue.Length).Insert(startindex, newValue);
         }
-
-        public static byte[] ParseView(this byte[] bytes, Dictionary<string, object> dictionary, bool removeSections = true)
-        {
-            string @string = Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "@"));
-            int indexOfSection = @string.IndexOf("!==");
-            int indexOfEnd = @string.LastIndexOf("==!");
-            if (indexOfSection != -1 && indexOfEnd != -1 && removeSections)
-                @string = @string.Remove(indexOfSection, indexOfEnd - indexOfSection + 3);
-
-            return Encoding.UTF8.GetBytes(@string);
-        }
-        public static string ParseSection(this byte[] bytes, Dictionary<string, object> dictionary) => Encoding.UTF8.GetString(ParseRaw(bytes, dictionary, "$"));
-
-        static byte[] ParseRaw(byte[] bytes, Dictionary<string, object> dictionary, string prefix)
-        {
-            string data = Encoding.UTF8.GetString(bytes);
-            foreach (string key in dictionary.Keys)
-            {
-                data = data.Replace(prefix + key, dictionary[key].ToString());
-            }
-
-            return Encoding.UTF8.GetBytes(data);
-        }
-
-        public static string GetSection(this byte[] bytes, string sectionName, Dictionary<string, object> dictionary)
-        {
-            return ParseSection(Encoding.UTF8.GetBytes(bytes.GetSection(sectionName)), dictionary);
-        }
-
-        public static string GetSection(this byte[] bytes, string sectionName)
-        {
-            string data = Encoding.UTF8.GetString(bytes);
-            string section = data.Between($"!=={sectionName}", "==!");
-
-            return section;
-        }
     }
 }

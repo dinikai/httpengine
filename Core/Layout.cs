@@ -14,19 +14,19 @@
             
         }
 
-        public virtual byte[] OnRequest(ModelRequest request)
+        public virtual ModelFile OnRequest(ModelRequest request)
         {
             return File("_Layout.html");
         }
 
-        protected byte[] File(string path)
+        protected ModelFile File(string path)
         {
             FileStream file = new FileStream(Path.Combine(PublicDirectory, path), FileMode.Open);
             byte[] buffer = new byte[file.Length];
             file.Read(buffer);
             file.Close();
 
-            return buffer;
+            return new ModelFile(buffer);
         }
     }
 }
