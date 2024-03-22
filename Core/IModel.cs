@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Specialized;
 using System.Net;
+using System.Text;
 
 namespace HttpEngine.Core
 {
@@ -57,6 +58,11 @@ namespace HttpEngine.Core
             Headers = new();
             StatusCode = -1;
         }
+
         public ModelResult(ModelFile file) : this() => File = file;
+
+        public ModelResult(byte[] data) : this() => File = new(data);
+
+        public ModelResult(string text) : this() => File = new(Encoding.UTF8.GetBytes(text));
     }
 }

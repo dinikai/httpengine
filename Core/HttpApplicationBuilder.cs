@@ -1,4 +1,6 @@
-﻿namespace HttpEngine.Core
+﻿using System.Text;
+
+namespace HttpEngine.Core
 {
     public class HttpApplicationBuilder
     {
@@ -23,6 +25,7 @@
             layout.PublicDirectory = publicDirectory;
             CacheControl cacheControl = options.CacheControl ?? CacheControl.Public;
             string handler = options.Handler ?? "h";
+            Encoding contentEncoding = options.ContentEncoding ?? Encoding.UTF8;
 
             if (!Directory.Exists(publicDirectory))
                 Directory.CreateDirectory(publicDirectory);
@@ -45,7 +48,7 @@
                 );
             }
 
-            var application = new HttpApplication(options.Router, hosts, layout, cacheControl);
+            var application = new HttpApplication(options.Router, hosts, layout, cacheControl, contentEncoding);
             return application;
         }
     }

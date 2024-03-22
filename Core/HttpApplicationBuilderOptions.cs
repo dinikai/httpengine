@@ -1,4 +1,6 @@
-﻿namespace HttpEngine.Core
+﻿using System.Text;
+
+namespace HttpEngine.Core
 {
     public struct HttpApplicationBuilderOptions
     {
@@ -9,5 +11,6 @@
         public string? StaticDirectory { get; set; }
         public CacheControl? CacheControl { get; set; }
         public string? Handler { get; set; }
+        public Encoding? ContentEncoding { get; set; }
     }
 }

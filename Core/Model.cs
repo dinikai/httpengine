@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Text;
 
 namespace HttpEngine.Core
@@ -23,9 +24,9 @@ namespace HttpEngine.Core
 
         }
 
-        protected ModelFile File(string path, ModelRequest request)
+        protected ModelFile File(string fileName, ModelRequest request)
         {
-            FileStream file = new FileStream(Path.Combine(PublicDirectory, path), FileMode.Open);
+            FileStream file = new FileStream(Path.Combine(PublicDirectory, fileName), FileMode.Open);
             byte[] buffer = new byte[file.Length];
             file.Read(buffer);
             file.Close();
@@ -42,6 +43,16 @@ namespace HttpEngine.Core
             {
                 return new ModelFile(buffer);
             }
+        }
+
+        public static ModelFile RawFile(string fileName)
+        {
+            FileStream file = new FileStream(fileName, FileMode.Open);
+            byte[] buffer = new byte[file.Length];
+            file.Read(buffer);
+            file.Close();
+
+            return new ModelFile(buffer);
         }
 
         public ModelResult? CallModel<T>(ModelRequest request) where T : IModel
@@ -68,6 +79,23 @@ namespace HttpEngine.Core
             {
                 Headers = headers,
                 StatusCode = 302
+            };
+        }
+
+        public static ModelResult RedirectBack(ModelRequest request)
+        {
+            return Redirect(request.Headers["Referer"]!);
+        }
+
+        public static ModelResult Download(byte[] data, string fileName)
+        {
+            WebHeaderCollection headers = new()
+            {
+                { "Content-Disposition", $"attachment; filename={fileName}" }
+            };
+            return new ModelResult(data)
+            {
+                Headers = headers,
             };
         }
 

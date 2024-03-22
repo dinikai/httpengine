@@ -1,8 +1,5 @@
-﻿using System.IO;
-using System.Linq.Expressions;
+﻿using HttpMultipartParser;
 using System.Net;
-using System.Net.Mime;
-using System.Text;
 
 namespace HttpEngine.Core
 {
@@ -58,11 +55,23 @@ namespace HttpEngine.Core
             }
 
             RequestArguments arguments;
-            if (method == HttpMethod.Get) arguments = new RequestArguments(context.Request.QueryString.ToDictionary());
+            if (method == HttpMethod.Get)
+                arguments = new RequestArguments(context.Request.QueryString.ToDictionary());
             else
             {
-                using var reader = new StreamReader(context.Request.InputStream);
-                arguments = new MultipartRequestArguments(Extensions.GetPostParams(reader.ReadToEnd()), new());
+                if (context.Request.ContentType != null)
+                {
+                    if (context.Request.ContentType!.Contains("multipart/form-data"))
+                    {
+                        arguments = ParseMultipart(context);
+                    }
+                    else
+                    {
+                        arguments = new RequestArguments(context.Request.QueryString.ToDictionary());
+                    }
+                }
+                else
+                    arguments = new RequestArguments(context.Request.QueryString.ToDictionary());
             }
 
             string route = "";
@@ -276,6 +285,18 @@ namespace HttpEngine.Core
                 Headers = headers,
                 ContentType = contentType
             };
+        }
+
+        private static MultipartRequestArguments ParseMultipart(HttpListenerContext context)
+        {
+            var parser = MultipartFormDataParser.Parse(context.Request.InputStream);
+
+            var parameters = new Dictionary<string, string>();
+            foreach (var parameter in parser.Parameters)
+                parameters.Add(parameter.Name, parameter.Data);
+            var files = parser.Files.Select(x => new MultipartFile(x.Name, x.FileName, x.ContentType, x.Data));
+
+            return new(parameters, files.ToArray());
         }
     }
 

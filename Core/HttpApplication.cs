@@ -2,6 +2,7 @@
 using System.Buffers.Text;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace HttpEngine.Core
 {
@@ -21,8 +22,9 @@ namespace HttpEngine.Core
         public Router Router { get; set; }
         public CacheControl CacheControl { get; set; }
         public Layout Layout { get; set; }
+        public Encoding ContentEncoding { get; set; }
         
-        public HttpApplication(Router router, string[] hosts, Layout layout, CacheControl cacheControl)
+        public HttpApplication(Router router, string[] hosts, Layout layout, CacheControl cacheControl, Encoding contentEncoding)
         {
             listener = new HttpListener();
             foreach (string host in hosts)
@@ -31,6 +33,7 @@ namespace HttpEngine.Core
             Router = router;
             CacheControl = cacheControl;
             Layout = layout;
+            ContentEncoding = contentEncoding;
         }
 
         public IModel UseModel(IModel model)
@@ -118,6 +121,7 @@ namespace HttpEngine.Core
                 Stream output = context.Response.OutputStream;
                 context.Response.StatusCode = routerResponse.StatusCode;
                 context.Response.Headers = routerResponse.Headers;
+                context.Response.ContentEncoding = ContentEncoding;
 
                 string cacheControl;
                 switch (CacheControl)
@@ -140,7 +144,7 @@ namespace HttpEngine.Core
                 }
                 context.Response.Headers.Add("Cache-Control", cacheControl);
 
-                context.Response.Headers["Server"] = "HttpEngine/1.0";
+                context.Response.Headers["Server"] = "HttpEngine/2024.0.3";
                 if (routerResponse.ContentType != null)
                     context.Response.ContentType = routerResponse.ContentType;
                 context.Response.Headers.Add("ETag", $"\"{Convert.ToBase64String(SHA1.HashData(routerResponse.PageBuffer))}\"");
@@ -155,9 +159,6 @@ namespace HttpEngine.Core
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine(e.Message);
                     Console.ForegroundColor = ConsoleColor.Gray;
-                } finally
-                {
-                    listener.Stop();
                 }
 
                 // Всякие выводы в консоль
