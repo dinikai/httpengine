@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Text;
 using System.Net;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -23,7 +24,8 @@ namespace HttpEngine.Core
         public CacheControl CacheControl { get; set; }
         public Layout Layout { get; set; }
         public Encoding ContentEncoding { get; set; }
-        
+        public List<View> Views { get; set; } = new List<View>();
+
         public HttpApplication(Router router, string[] hosts, Layout layout, CacheControl cacheControl, Encoding contentEncoding)
         {
             listener = new HttpListener();
@@ -33,14 +35,13 @@ namespace HttpEngine.Core
             Router = router;
             CacheControl = cacheControl;
             Layout = layout;
+            layout.Application = this;
             ContentEncoding = contentEncoding;
         }
 
         public IModel UseModel(IModel model)
         {
-            model.PublicDirectory ??= Router.PublicDirectory;
             model.Error404 ??= Router.Error404;
-            model.Layout ??= Layout;
             model.Application = this;
 
             Router.Models.Insert(0, model);
@@ -57,8 +58,6 @@ namespace HttpEngine.Core
 
         public IModel Use404(IModel model)
         {
-            model.PublicDirectory ??= Router.PublicDirectory;
-            model.Layout ??= Layout;
             model.Application = this;
 
             Router.Error404 = model;
@@ -98,6 +97,23 @@ namespace HttpEngine.Core
             Router.Maps.Insert(0, new Map(HttpMethod.Post, route, func));
         }
 
+        public void View<T>() where T : View, new()
+        {
+            View(new T());
+        }
+
+        public void View(View view)
+        {
+            view.ResourcesDirectory ??= Router.ResourcesDirectory;
+            view.Layout ??= Layout;
+            Views.Add(view);
+        }
+
+        public View? GetView<T>() where T : View
+        {
+            return Views.FirstOrDefault(x => x is T);
+        }
+
         /// <summary>
         /// Запускает приложение
         /// </summary>
@@ -113,57 +129,63 @@ namespace HttpEngine.Core
                 listener.Start();
                 HttpListenerContext context = listener.GetContext();
 
-                // Маршрутизировать запрос и получить RouterResponse
-                var routerResponse = Router.Route(context);
-
-                // Формирование и отправка ответа
-                context.Response.ContentLength64 = routerResponse.PageBuffer.Length;
-                Stream output = context.Response.OutputStream;
-                context.Response.StatusCode = routerResponse.StatusCode;
-                context.Response.Headers = routerResponse.Headers;
-                context.Response.ContentEncoding = ContentEncoding;
-
-                string cacheControl;
-                switch (CacheControl)
-                {
-                    case CacheControl.NoStore:
-                        cacheControl = "no-store";
-                        break;
-                    case CacheControl.NoCache:
-                        cacheControl = "no-cache";
-                        break;
-                    case CacheControl.Private:
-                        cacheControl = "private";
-                        break;
-                    case CacheControl.Public:
-                        cacheControl = "public";
-                        break;
-                    default:
-                        cacheControl = "public";
-                        break;
-                }
-                context.Response.Headers.Add("Cache-Control", cacheControl);
-
-                context.Response.Headers["Server"] = "HttpEngine/2024.0.3";
-                if (routerResponse.ContentType != null)
-                    context.Response.ContentType = routerResponse.ContentType;
-                context.Response.Headers.Add("ETag", $"\"{Convert.ToBase64String(SHA1.HashData(routerResponse.PageBuffer))}\"");
-
-                try
-                {
-                    output.Write(routerResponse.PageBuffer);
-                    output.Flush();
-                    output.Close();
-                } catch (Exception e)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(e.Message);
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                }
-
-                // Всякие выводы в консоль
-                Console.WriteLine($"{context.Request.HttpMethod} {context.Request.Url}");
+                new Thread(() => ProcessClient(context)).Start();
             }
+        }
+
+        public void ProcessClient(HttpListenerContext context)
+        {
+            // Маршрутизировать запрос и получить RouterResponse
+            var routerResponse = Router.Route(context);
+
+            // Формирование и отправка ответа
+            context.Response.ContentLength64 = routerResponse.PageBuffer.Length;
+            Stream output = context.Response.OutputStream;
+            context.Response.StatusCode = routerResponse.StatusCode;
+            context.Response.Headers = routerResponse.Headers;
+            context.Response.ContentEncoding = ContentEncoding;
+
+            string cacheControl;
+            switch (CacheControl)
+            {
+                case CacheControl.NoStore:
+                    cacheControl = "no-store";
+                    break;
+                case CacheControl.NoCache:
+                    cacheControl = "no-cache";
+                    break;
+                case CacheControl.Private:
+                    cacheControl = "private";
+                    break;
+                case CacheControl.Public:
+                    cacheControl = "public";
+                    break;
+                default:
+                    cacheControl = "public";
+                    break;
+            }
+            context.Response.Headers.Add("Cache-Control", cacheControl);
+
+            context.Response.Headers["Server"] = "HttpEngine/2024.0.3";
+            if (routerResponse.ContentType != null)
+                context.Response.ContentType = routerResponse.ContentType;
+            context.Response.Headers.Add("ETag", $"\"{Convert.ToBase64String(SHA1.HashData(routerResponse.PageBuffer))}\"");
+
+            try
+            {
+                output.Write(routerResponse.PageBuffer);
+                output.Flush();
+                output.Close();
+            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(e.Message);
+                Console.ForegroundColor = ConsoleColor.Gray;
+            }
+
+            // Всякие выводы в консоль
+            Console.WriteLine($"{context.Request.HttpMethod} {context.Request.Url}");
         }
     }
 }

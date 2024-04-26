@@ -2,26 +2,33 @@
 {
     public class Layout
     {
-        public string PublicDirectory { get; set; } = "";
+        public string ResourcesDirectory { get; set; } = "";
+        public HttpApplication Application { get; set; }
 
-        public Layout(string publicDirectory)
+        public Layout(string resourcesDirectory, HttpApplication application)
         {
-            PublicDirectory = publicDirectory;
+            ResourcesDirectory = resourcesDirectory;
+            Application = application;
         }
 
         public Layout()
         {
-            
+
+        }
+
+        protected T? View<T>() where T : View
+        {
+            return (T)Application.GetView<T>()!;
         }
 
         public virtual ModelFile OnRequest(ModelRequest request)
         {
-            return File("_Layout.html");
+            return File("_layout.html");
         }
 
         protected ModelFile File(string path)
         {
-            FileStream file = new FileStream(Path.Combine(PublicDirectory, path), FileMode.Open);
+            FileStream file = new FileStream(Path.Combine(ResourcesDirectory, path), FileMode.Open);
             byte[] buffer = new byte[file.Length];
             file.Read(buffer);
             file.Close();

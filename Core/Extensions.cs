@@ -37,20 +37,8 @@ namespace HttpEngine.Core
         {
             int posA = @this.IndexOf(a);
             int posB = @this.IndexOf(b, posA + 1);
-            if (posA == -1)
-            {
-                return "Between error: A = -1";
-            }
-            if (posB == -1)
-            {
-                return "Between error: B = -1";
-            }
             int adjustedPosA = posA + a.Length;
-            if (adjustedPosA >= posB)
-            {
-                return "Between error: PosA > PosB";
-            }
-            
+
             return @this[adjustedPosA..posB];
         }
 

@@ -11,8 +11,8 @@ namespace HttpEngine.Core
         /// <summary>
         /// Директория с публичными файлами, доступными по интернету
         /// </summary>
+        public string ResourcesDirectory { get; set; }
         public string PublicDirectory { get; set; }
-        public string StaticDirectory { get; set; }
 
         /// <summary>
         /// Страница-заглушка при 404
@@ -26,10 +26,10 @@ namespace HttpEngine.Core
         public List<Map> Maps { get; set; }
         public string Handler { get; set; }
 
-        public Router(string publicDirectory, string staticDirectory, IModel error404, string handler)
+        public Router(string resourcesDirectory, string publicDirectory, IModel error404, string handler)
         {
+            ResourcesDirectory = resourcesDirectory;
             PublicDirectory = publicDirectory;
-            StaticDirectory = staticDirectory;
             Error404 = error404;
             Models = new List<IModel>();
             Maps = new List<Map>();
@@ -38,7 +38,7 @@ namespace HttpEngine.Core
 
         public RouterResult Route(HttpListenerContext context, List<object>? skip = null)
         {
-            skip ??= new();
+            skip ??= [];
 
             HttpMethod method;
             switch (context.Request.HttpMethod)
@@ -183,9 +183,11 @@ namespace HttpEngine.Core
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
                 var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
-                if (arguments.Arguments.ContainsKey(Handler)) modelRequest.Handler = arguments.Arguments[Handler];
-                else modelRequest.Handler = "";
+                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
+                if (arguments.Arguments.TryGetValue(Handler, out string? value))
+                    modelRequest.Handler = value;
+                else
+                    modelRequest.Handler = "";
 
                 modelResponse = model.OnRequest(modelRequest);
 
@@ -202,9 +204,11 @@ namespace HttpEngine.Core
             else if (map != null)
             {
                 var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
-                if (arguments.Arguments.ContainsKey("handler")) modelRequest.Handler = arguments.Arguments["handler"];
-                else modelRequest.Handler = "";
+                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
+                if (arguments.Arguments.TryGetValue(Handler, out string? value))
+                    modelRequest.Handler = value;
+                else
+                    modelRequest.Handler = "";
 
                 modelResponse = map.Func(modelRequest);
 
@@ -221,7 +225,7 @@ namespace HttpEngine.Core
             else
             {
                 // Иначе пытаемся найти файл
-                string path = $"{StaticDirectory}{rawUrlWithoutArgs}";
+                string path = $"{PublicDirectory}{rawUrlWithoutArgs}";
                 publicFile = true;
 
                 if (File.Exists(path))
@@ -236,7 +240,7 @@ namespace HttpEngine.Core
                         $" {lastModified:MMM} {lastModified.Year} {lastModified.Hour}:{lastModified.Minute}:{lastModified.Second} GMT";
                     headers.Add("Last-Modified", lastModifiedHeader);
 
-                    /*string extension = rawUrlWithoutArgs[rawUrlWithoutArgs.LastIndexOf('.')..][1..];
+                    string extension = Path.GetExtension(Path.GetFileName(path)).Replace(".", "");
                     switch (extension)
                     {
                         case "htm":
@@ -260,13 +264,13 @@ namespace HttpEngine.Core
                         case "txt":
                             contentType = "text/plain";
                             break;
-                    }*/
+                    }
                 }
                 else
                 {
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
                     var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                        context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route);
+                        context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
                     modelResponse = Error404.OnRequest(modelRequest);
                     viewData = modelResponse.File;
                     statusCode = 404;

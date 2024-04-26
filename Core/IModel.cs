@@ -8,9 +8,7 @@ namespace HttpEngine.Core
     public interface IModel
     {
         List<string> Routes { get; set; }
-        string PublicDirectory { get; set; }
         IModel Error404 { get; set; }
-        Layout Layout { get; set; }
         HttpApplication Application { get; set; }
 
         ModelResult OnRequest(ModelRequest request);
@@ -30,9 +28,10 @@ namespace HttpEngine.Core
         public CookieCollection ResponseCookies { get; set; }
         public NameValueCollection Headers { get; set; }
         public string Route { get; set; }
+        public IPAddress ClientAddress { get; set; }
 
         public ModelRequest(RequestArguments arguments, string[] urlRoutes, string url, string rawUrl, HttpMethod method,
-            CookieCollection requestCookies, CookieCollection responseCookies, NameValueCollection headers, string route)
+            CookieCollection requestCookies, CookieCollection responseCookies, NameValueCollection headers, string route, IPAddress clientAddress)
         {
             Arguments = arguments;
             UrlRoutes = urlRoutes;
@@ -43,6 +42,7 @@ namespace HttpEngine.Core
             ResponseCookies = responseCookies;
             Headers = headers;
             Route = route;
+            ClientAddress = clientAddress;
         }
     }
 
