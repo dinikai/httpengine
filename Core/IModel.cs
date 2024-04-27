@@ -16,21 +16,67 @@ namespace HttpEngine.Core
         void OnUse();
     }
 
+    /// <summary>
+    /// Represents a model request in the HTTP engine.
+    /// </summary>
     public class ModelRequest
     {
-        public RequestArguments Arguments { get; set; }
-        public string[] UrlRoutes { get; set; }
-        public string Url { get; set; }
-        public string RawUrl { get; set; }
-        public HttpMethod Method { get; set; }
-        public string? Handler { get; set; }
-        public CookieCollection RequestCookies { get; set; }
-        public CookieCollection ResponseCookies { get; set; }
-        public NameValueCollection Headers { get; set; }
-        public string Route { get; set; }
-        public IPAddress ClientAddress { get; set; }
+        /// <summary>
+        /// Gets the request arguments.
+        /// </summary>
+        public RequestArguments Arguments { get; }
 
-        public ModelRequest(RequestArguments arguments, string[] urlRoutes, string url, string rawUrl, HttpMethod method,
+        /// <summary>
+        /// Gets the URL routes.
+        /// </summary>
+        public string[] UrlRoutes { get; }
+
+        /// <summary>
+        /// Gets the URL without GET parameters.
+        /// </summary>
+        public string Url { get; }
+
+        /// <summary>
+        /// Gets the raw URL.
+        /// </summary>
+        public string RawUrl { get; }
+
+        /// <summary>
+        /// Gets the HTTP method.
+        /// </summary>
+        public HttpMethod Method { get; }
+
+        /// <summary>
+        /// Gets the request handler.
+        /// </summary>
+        public string? Handler { get; }
+
+        /// <summary>
+        /// Gets the request cookies.
+        /// </summary>
+        public CookieCollection RequestCookies { get; }
+
+        /// <summary>
+        /// Gets the response cookies.
+        /// </summary>
+        public CookieCollection ResponseCookies { get; }
+
+        /// <summary>
+        /// Gets the request headers.
+        /// </summary>
+        public NameValueCollection Headers { get; }
+
+        /// <summary>
+        /// Gets the route that request mathed.
+        /// </summary>
+        public string Route { get; }
+
+        /// <summary>
+        /// Gets the client IP address.
+        /// </summary>
+        public IPAddress ClientAddress { get; }
+
+        public ModelRequest(RequestArguments arguments, string[] urlRoutes, string url, string rawUrl, HttpMethod method, string? handler,
             CookieCollection requestCookies, CookieCollection responseCookies, NameValueCollection headers, string route, IPAddress clientAddress)
         {
             Arguments = arguments;
@@ -38,6 +84,7 @@ namespace HttpEngine.Core
             Url = url;
             RawUrl = rawUrl;
             Method = method;
+            Handler = handler;
             RequestCookies = requestCookies;
             ResponseCookies = responseCookies;
             Headers = headers;

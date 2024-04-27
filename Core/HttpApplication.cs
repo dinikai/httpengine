@@ -13,19 +13,40 @@ namespace HttpEngine.Core
     public class HttpApplication
     {
         /// <summary>
-        /// Главный HttpListener
+        /// Gets the router for handling incoming requests.
         /// </summary>
-        HttpListener listener;
+        public Router Router { get; }
 
         /// <summary>
-        /// Объект роутера
+        /// Gets or sets the cache control strategy for the application.
         /// </summary>
-        public Router Router { get; set; }
         public CacheControl CacheControl { get; set; }
+
+        /// <summary>
+        /// Gets or sets the layout for rendering views.
+        /// </summary>
         public Layout Layout { get; set; }
+
+        /// <summary>
+        /// Gets or sets the content encoding for responses.
+        /// </summary>
         public Encoding ContentEncoding { get; set; }
+
+        /// <summary>
+        /// Gets the list of registered views.
+        /// </summary>
         public List<View> Views { get; set; } = new List<View>();
 
+        private HttpListener listener;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HttpApplication"/> class.
+        /// </summary>
+        /// <param name="router">The router for handling requests.</param>
+        /// <param name="hosts">The host addresses to listen on.</param>
+        /// <param name="layout">The layout for rendering views.</param>
+        /// <param name="cacheControl">The cache control strategy.</param>
+        /// <param name="contentEncoding">The content encoding for responses.</param>
         public HttpApplication(Router router, string[] hosts, Layout layout, CacheControl cacheControl, Encoding contentEncoding)
         {
             listener = new HttpListener();
@@ -39,6 +60,9 @@ namespace HttpEngine.Core
             ContentEncoding = contentEncoding;
         }
 
+        /// <summary>
+        /// Adds a model to handle requests matching specific routes.
+        /// </summary>
         public IModel UseModel(IModel model)
         {
             model.Error404 ??= Router.Error404;
@@ -50,12 +74,18 @@ namespace HttpEngine.Core
             return model;
         }
 
+        /// <summary>
+        /// Adds a model of type <typeparamref name="T"/> to handle requests matching specific routes.
+        /// </summary>
         public IModel UseModel<T>() where T : IModel, new()
         {
             T model = new();
             return UseModel(model);
         }
 
+        /// <summary>
+        /// Sets a model to handle 404 errors.
+        /// </summary>
         public IModel Use404(IModel model)
         {
             model.Application = this;
@@ -66,42 +96,66 @@ namespace HttpEngine.Core
             return model;
         }
 
+        /// <summary>
+        /// Sets a model of type <typeparamref name="T"/> to handle 404 errors.
+        /// </summary>
         public IModel Use404<T>() where T : IModel, new()
         {
             T model = new();
             return Use404(model);
         }
 
+        /// <summary>
+        /// Removes a model from handling requests.
+        /// </summary>
         public void RemoveModel(IModel model)
         {
             Router.Models.Remove(model);
         }
 
+        /// <summary>
+        /// Removes all models that match the specified predicate.
+        /// </summary>
         public void RemoveAll(Predicate<IModel> predicate)
         {
             Router.Models.RemoveAll(x => predicate(x));
         }
 
+        /// <summary>
+        /// Maps a route to a handler function.
+        /// </summary>
         public void Map(string route, Func<ModelRequest, ModelResult> func)
         {
             Router.Maps.Insert(0, new Map(null, route, func));
         }
 
+        /// <summary>
+        /// Maps a route to a handler function for HTTP GET method.
+        /// </summary>
         public void MapGet(string route, Func<ModelRequest, ModelResult> func)
         {
             Router.Maps.Insert(0, new Map(HttpMethod.Get, route, func));
         }
 
+        /// <summary>
+        /// Maps a route to a handler function for HTTP POST method.
+        /// </summary>
         public void MapPost(string route, Func<ModelRequest, ModelResult> func)
         {
             Router.Maps.Insert(0, new Map(HttpMethod.Post, route, func));
         }
 
+        /// <summary>
+        /// Adds a view of type <typeparamref name="T"/>.
+        /// </summary>
         public void View<T>() where T : View, new()
         {
             View(new T());
         }
 
+        /// <summary>
+        /// Adds the specified view.
+        /// </summary>
         public void View(View view)
         {
             view.ResourcesDirectory ??= Router.ResourcesDirectory;
@@ -109,13 +163,16 @@ namespace HttpEngine.Core
             Views.Add(view);
         }
 
+        /// <summary>
+        /// Gets the view of type <typeparamref name="T"/>.
+        /// </summary>
         public View? GetView<T>() where T : View
         {
             return Views.FirstOrDefault(x => x is T);
         }
 
         /// <summary>
-        /// Запускает приложение
+        /// Starts the application and listens for incoming HTTP requests.
         /// </summary>
         public void Run()
         {
@@ -133,7 +190,7 @@ namespace HttpEngine.Core
             }
         }
 
-        public void ProcessClient(HttpListenerContext context)
+        private void ProcessClient(HttpListenerContext context)
         {
             // Маршрутизировать запрос и получить RouterResponse
             var routerResponse = Router.Route(context);

@@ -178,17 +178,17 @@ namespace HttpEngine.Core
             WebHeaderCollection headers = new();
             bool publicFile;
             string? contentType = null;
+
+            string? handler = null;
+            if (arguments.Arguments.TryGetValue(Handler, out string? value))
+                handler = value;
+
+            var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
+                handler, context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
             // Если модель существует,
             if (model != null)
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
-                var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
-                if (arguments.Arguments.TryGetValue(Handler, out string? value))
-                    modelRequest.Handler = value;
-                else
-                    modelRequest.Handler = "";
-
                 modelResponse = model.OnRequest(modelRequest);
 
                 skip.Add(model);
@@ -203,13 +203,6 @@ namespace HttpEngine.Core
             }
             else if (map != null)
             {
-                var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                    context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
-                if (arguments.Arguments.TryGetValue(Handler, out string? value))
-                    modelRequest.Handler = value;
-                else
-                    modelRequest.Handler = "";
-
                 modelResponse = map.Func(modelRequest);
 
                 skip.Add(map);
@@ -269,9 +262,9 @@ namespace HttpEngine.Core
                 else
                 {
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
-                    var modelRequest = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
-                        context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
-                    modelResponse = Error404.OnRequest(modelRequest);
+                    var error404Request = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
+                        handler, context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
+                    modelResponse = Error404.OnRequest(error404Request);
                     viewData = modelResponse.File;
                     statusCode = 404;
                     headers = modelResponse.Headers;
