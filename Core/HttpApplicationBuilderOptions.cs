@@ -10,12 +10,12 @@ namespace HttpEngine.Core
         public Router? Router { get; set; }
 
         /// <summary>
-        /// Gets or sets the hosts that the HTTP application will listen to.
+        /// Gets or sets the hosts that the application will listen to.
         /// </summary>
         public string[]? Hosts { get; set; }
 
         /// <summary>
-        /// Gets or sets the layout for the HTTP application.
+        /// Gets or sets the default layout for the application.
         /// </summary>
         public Layout? Layout { get; set; }
 
@@ -30,18 +30,23 @@ namespace HttpEngine.Core
         public string? PublicDirectory { get; set; }
 
         /// <summary>
-        /// Gets or sets the cache control options for the HTTP application.
+        /// Gets or sets the cache control options for the application.
         /// </summary>
         public CacheControl? CacheControl { get; set; }
 
         /// <summary>
-        /// Gets or sets the handler for the HTTP application.
+        /// Gets or sets the handler parameter name for the application.
         /// </summary>
         public string? Handler { get; set; }
 
         /// <summary>
-        /// Gets or sets the encoding for the content of the HTTP application.
+        /// Gets or sets the encoding for the pages of the application.
         /// </summary>
         public Encoding? ContentEncoding { get; set; }
+
+        /// <summary>
+        /// Gets or sets caching of resource files.
+        /// </summary>
+        public bool ResourceCaching { get; set; }
     }
 }

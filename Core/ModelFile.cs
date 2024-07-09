@@ -67,7 +67,7 @@ namespace HttpEngine.Core
             return Encoding.UTF8.GetBytes(data);
         }
 
-        private string GetSection(string sectionName)
+        public string GetSection(string sectionName)
         {
             string data = Encoding.UTF8.GetString(Data);
             string section = data.Between($"!=={sectionName};", "==!");

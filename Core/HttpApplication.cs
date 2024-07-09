@@ -1,5 +1,7 @@
-﻿using System;
+﻿using HttpEngine.Caching;
+using System;
 using System.Buffers.Text;
+using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -25,7 +27,7 @@ namespace HttpEngine.Core
         /// <summary>
         /// Gets or sets the layout for rendering views.
         /// </summary>
-        public Layout Layout { get; set; }
+        public Layout? Layout { get; set; }
 
         /// <summary>
         /// Gets or sets the content encoding for responses.
@@ -35,9 +37,12 @@ namespace HttpEngine.Core
         /// <summary>
         /// Gets the list of registered views.
         /// </summary>
-        public List<View> Views { get; set; } = new List<View>();
+        public List<View> Views { get; set; } = [];
 
+        private List<CachedResource> cachedResources = [];
+        private bool resourceCaching;
         private HttpListener listener;
+        private List<Middleware> middlewares = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HttpApplication"/> class.
@@ -47,29 +52,34 @@ namespace HttpEngine.Core
         /// <param name="layout">The layout for rendering views.</param>
         /// <param name="cacheControl">The cache control strategy.</param>
         /// <param name="contentEncoding">The content encoding for responses.</param>
-        public HttpApplication(Router router, string[] hosts, Layout layout, CacheControl cacheControl, Encoding contentEncoding)
+        public HttpApplication(Router router, string[] hosts, CacheControl cacheControl, Encoding contentEncoding, bool resourceCaching)
         {
+            this.resourceCaching = resourceCaching;
             listener = new HttpListener();
             foreach (string host in hosts)
                 listener.Prefixes.Add(host);
 
             Router = router;
             CacheControl = cacheControl;
-            Layout = layout;
-            layout.Application = this;
             ContentEncoding = contentEncoding;
+
+            if (resourceCaching)
+            {
+                CacheResources();
+            }
         }
 
         /// <summary>
         /// Adds a model to handle requests matching specific routes.
         /// </summary>
-        public IModel UseModel(IModel model)
+        public Model UseModel(Model model)
         {
-            model.Error404 ??= Router.Error404;
             model.Application = this;
 
             Router.Models.Insert(0, model);
             model.OnUse();
+
+            Router.Error404 = model;
 
             return model;
         }
@@ -77,32 +87,11 @@ namespace HttpEngine.Core
         /// <summary>
         /// Adds a model of type <typeparamref name="T"/> to handle requests matching specific routes.
         /// </summary>
-        public IModel UseModel<T>() where T : IModel, new()
+        public Model UseModel<T>() where T : Model, new()
         {
             T model = new();
+            model.Middlewares.AddRange(middlewares);
             return UseModel(model);
-        }
-
-        /// <summary>
-        /// Sets a model to handle 404 errors.
-        /// </summary>
-        public IModel Use404(IModel model)
-        {
-            model.Application = this;
-
-            Router.Error404 = model;
-            model.OnUse();
-
-            return model;
-        }
-
-        /// <summary>
-        /// Sets a model of type <typeparamref name="T"/> to handle 404 errors.
-        /// </summary>
-        public IModel Use404<T>() where T : IModel, new()
-        {
-            T model = new();
-            return Use404(model);
         }
 
         /// <summary>
@@ -158,9 +147,11 @@ namespace HttpEngine.Core
         /// </summary>
         public void View(View view)
         {
-            view.ResourcesDirectory ??= Router.ResourcesDirectory;
+            view.Application ??= this;
             view.Layout ??= Layout;
             Views.Add(view);
+
+            view.OnUse();
         }
 
         /// <summary>
@@ -169,6 +160,14 @@ namespace HttpEngine.Core
         public View? GetView<T>() where T : View
         {
             return Views.FirstOrDefault(x => x is T);
+        }
+
+        public void AddMiddleware<T>() where T : Middleware, new()
+        {
+            foreach (var model in Router.Models)
+            {
+                model.Middleware<T>();
+            }
         }
 
         /// <summary>
@@ -221,12 +220,19 @@ namespace HttpEngine.Core
                     cacheControl = "public";
                     break;
             }
-            context.Response.Headers.Add("Cache-Control", cacheControl);
+            context.Response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+            //context.Response.Headers.Add("Cache-Control", cacheControl + ", max-age=86400");
 
             context.Response.Headers["Server"] = "HttpEngine/2024.0.3";
             if (routerResponse.ContentType != null)
                 context.Response.ContentType = routerResponse.ContentType;
             context.Response.Headers.Add("ETag", $"\"{Convert.ToBase64String(SHA1.HashData(routerResponse.PageBuffer))}\"");
+
+            foreach (var cookie in routerResponse.Cookies)
+            {
+                Cookie c = (Cookie)cookie;
+                context.Response.Headers.Add("Set-Cookie", $"{c.Name}={c.Value}; Expires={c.Expires:r}");
+            }
 
             try
             {
@@ -242,7 +248,38 @@ namespace HttpEngine.Core
             }
 
             // Всякие выводы в консоль
-            Console.WriteLine($"{context.Request.HttpMethod} {context.Request.Url}");
+            Console.WriteLine($" {context.Request.HttpMethod} {context.Request.Url}");
+        }
+
+        internal byte[]? ReadResource(string fileName)
+        {
+            if (resourceCaching)
+            {
+                var resource = cachedResources.FirstOrDefault(x =>  x.FileName == fileName);
+                if (resource == null)
+                    return Stubs.Stubs.ResourceNotFound(fileName);
+                else
+                    return resource.Data;
+            } else
+            {
+                if (File.Exists(Path.Combine(Router.ResourcesDirectory, fileName)))
+                    return File.ReadAllBytes(Path.Combine(Router.ResourcesDirectory, fileName));
+                else
+                    return Stubs.Stubs.ResourceNotFound(fileName);
+            }
+        }
+
+        private void CacheResources()
+        {
+            Console.WriteLine("Caching resources...");
+            foreach (string file in Directory.EnumerateFiles(Router.ResourcesDirectory, "*.*", SearchOption.AllDirectories))
+            {
+                var relativePath = Path.GetRelativePath(Router.ResourcesDirectory, file).Replace("\\", "/");
+                Console.WriteLine($" Caching {relativePath}");
+                var resource = new CachedResource(relativePath, File.ReadAllBytes(file));
+                cachedResources.Add(resource);
+            }
+            Console.WriteLine();
         }
     }
 }

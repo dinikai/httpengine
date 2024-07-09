@@ -13,9 +13,9 @@ namespace HttpEngine.Core
         public List<string> Routes { get; set; } = new();
 
         /// <summary>
-        /// Gets or sets the error 404 model.
+        /// Gets or sets connected middlewares.
         /// </summary>
-        public IModel Error404 { get; set; }
+        public List<Middleware> Middlewares { get; set; } = new();
 
         /// <summary>
         /// Gets or sets the HTTP application associated with the model.
@@ -23,11 +23,21 @@ namespace HttpEngine.Core
         public HttpApplication Application { get; set; }
 
         /// <summary>
-        /// Handles incoming model requests.
+        /// Handles incoming GET model requests.
         /// </summary>
         /// <param name="request">The model request.</param>
         /// <returns>The model result.</returns>
-        public virtual ModelResult OnRequest(ModelRequest request)
+        public virtual ModelResult OnGet(ModelRequest request)
+        {
+            return new ModelResult();
+        }
+
+        /// <summary>
+        /// Handles incoming POST model requests.
+        /// </summary>
+        /// <param name="request">The model request.</param>
+        /// <returns>The model result.</returns>
+        public virtual ModelResult OnPost(ModelRequest request)
         {
             return new ModelResult();
         }
@@ -71,13 +81,33 @@ namespace HttpEngine.Core
         /// <typeparam name="T">The type of the model to call.</typeparam>
         /// <param name="request">The model request.</param>
         /// <returns>The model result.</returns>
-        public ModelResult? CallModel<T>(ModelRequest request) where T : IModel
+        public ModelResult? CallModel<T>(ModelRequest request, HttpMethod method = HttpMethod.Get) where T : IModel
         {
             IModel? model = Application.Router.Models.FirstOrDefault(x => x is T);
             if (model == null)
                 return null;
 
-            return model.OnRequest(request);
+            switch (method)
+            {
+                case HttpMethod.Get:
+                    return model.OnGet(request);
+                case HttpMethod.Post:
+                    return model.OnPost(request);
+                default:
+                    return model.OnGet(request);
+            }
+        }
+
+        /// <summary>
+        /// Adds middleware to chain.
+        /// </summary>
+        /// <typeparam name="T">Middleware type</typeparam>
+        /// <returns></returns>
+        public Model Middleware<T>() where T : Middleware, new()
+        {
+            var middleware = new T();
+            Middlewares.Add(middleware);
+            return this;
         }
 
         /// <summary>

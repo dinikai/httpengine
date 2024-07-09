@@ -7,9 +7,20 @@
     public class RequestArguments
     {
         /// <summary>
-        /// Gets or sets the dictionary of request arguments.
+        /// Gets request argument by key if it exists, otherwise returns null.
         /// </summary>
-        public Dictionary<string, string> Arguments { get; set; }
+        public string? this[string key]
+        {
+            get
+            {
+                if (Arguments.ContainsKey(key))
+                    return Arguments[key];
+                else
+                    return null;
+            }
+        }
+
+        internal Dictionary<string, string> Arguments { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RequestArguments"/> class with the specified dictionary of arguments.

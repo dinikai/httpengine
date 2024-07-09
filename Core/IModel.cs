@@ -8,11 +8,13 @@ namespace HttpEngine.Core
     public interface IModel
     {
         List<string> Routes { get; set; }
-        IModel Error404 { get; set; }
+        public List<Middleware> Middlewares { get; set; }
         HttpApplication Application { get; set; }
 
-        ModelResult OnRequest(ModelRequest request);
-        ModelResult? CallModel<T>(ModelRequest request) where T : IModel;
+        ModelResult OnGet(ModelRequest request);
+        ModelResult OnPost(ModelRequest request);
+        ModelResult? CallModel<T>(ModelRequest request, HttpMethod method = HttpMethod.Get) where T : IModel;
+        Model Middleware<T>() where T : Middleware, new();
         void OnUse();
     }
 
@@ -97,12 +99,14 @@ namespace HttpEngine.Core
     {
         public ModelFile File { get; set; }
         public WebHeaderCollection Headers { get; set; }
+        public CookieCollection Cookies { get; set; }
         public int StatusCode { get; set; }
 
         public ModelResult()
         {
             File = new(Array.Empty<byte>());
             Headers = new();
+            Cookies = new();
             StatusCode = -1;
         }
 

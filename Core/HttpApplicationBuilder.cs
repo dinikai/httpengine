@@ -1,31 +1,20 @@
-﻿using System.Text;
+﻿using System.Reflection;
+using System.Text;
 
 namespace HttpEngine.Core
 {
-    public class HttpApplicationBuilder
+    public static class HttpApplicationBuilder
     {
-        HttpApplicationBuilderOptions options;
-
-        public HttpApplicationBuilder()
+        public static HttpApplication Build(HttpApplicationBuilderOptions options)
         {
-            options = new();
-        }
-
-        public HttpApplicationBuilder(HttpApplicationBuilderOptions options) : this()
-        {
-            this.options = options;
-        }
-
-        public HttpApplication Build()
-        {
-            string[] hosts = options.Hosts ?? ["http://localhost:8080/"];
-            string resourcesDirectory = options.ResourcesDirectory ?? $@"{Environment.CurrentDirectory}/resources";
-            string publicDirectory = options.PublicDirectory ?? $@"{Environment.CurrentDirectory}/public";
-            Layout layout = options.Layout ?? new Layout();
-            layout.ResourcesDirectory = resourcesDirectory;
+            string[] hosts = options.Hosts ?? ["http://*:8080/"];
+            string filesDirectory = $"{Assembly.GetCallingAssembly().GetName().Name}_files";
+            string resourcesDirectory = options.ResourcesDirectory ?? $@"{Environment.CurrentDirectory}/{filesDirectory}/resources";
+            string publicDirectory = options.PublicDirectory ?? $@"{Environment.CurrentDirectory}/{filesDirectory}/public";
             CacheControl cacheControl = options.CacheControl ?? CacheControl.Public;
             string handler = options.Handler ?? "h";
             Encoding contentEncoding = options.ContentEncoding ?? Encoding.UTF8;
+            bool resourceCaching = options.ResourceCaching;
 
             if (!Directory.Exists(resourcesDirectory))
                 Directory.CreateDirectory(resourcesDirectory);
@@ -44,7 +33,8 @@ namespace HttpEngine.Core
                 );
             }
 
-            var application = new HttpApplication(options.Router, hosts, layout, cacheControl, contentEncoding);
+            var application = new HttpApplication(options.Router, hosts, cacheControl, contentEncoding, resourceCaching);
+            application.Layout = options.Layout ?? new Layout(application);
             return application;
         }
     }

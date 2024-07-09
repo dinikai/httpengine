@@ -9,9 +9,13 @@ namespace HttpEngine.Core
     public class Router
     {
         /// <summary>
-        /// Директория с публичными файлами, доступными по интернету
+        /// Gets or sets resources directory
         /// </summary>
         public string ResourcesDirectory { get; set; }
+
+        /// <summary>
+        /// Gets or sets public files directory
+        /// </summary>
         public string PublicDirectory { get; set; }
 
         /// <summary>
@@ -124,13 +128,14 @@ namespace HttpEngine.Core
                 map = mapEach;
             }
 
+            var models = Models.Skip(1);
             IModel? model = null;
-            foreach (IModel modelEach in Models)
+            foreach (IModel modelEach in models)
             {
                 if (skip.Contains(modelEach))
                     continue;
 
-                if (!modelEach.Routes.Any())
+                if (modelEach.Routes.Count == 0)
                     model = modelEach;
 
                 foreach (string routeEach in modelEach.Routes)
@@ -178,6 +183,7 @@ namespace HttpEngine.Core
             WebHeaderCollection headers = new();
             bool publicFile;
             string? contentType = null;
+            CookieCollection cookies = [];
 
             string? handler = null;
             if (arguments.Arguments.TryGetValue(Handler, out string? value))
@@ -189,7 +195,28 @@ namespace HttpEngine.Core
             if (model != null)
             {
                 // то вызываем модель и слепливаем путь к файлу, который потом отправим
-                modelResponse = model.OnRequest(modelRequest);
+                switch (method)
+                {
+                    case HttpMethod.Get:
+                        modelResponse = model.OnGet(modelRequest);
+                        break;
+                    case HttpMethod.Post:
+                        modelResponse = model.OnPost(modelRequest);
+                        break;
+                    default:
+                        modelResponse = model.OnGet(modelRequest);
+                        break;
+                }
+
+                foreach (var middleware in model.Middlewares)
+                {
+                    var middlewareResult = middleware.OnRequest(modelRequest, modelResponse);
+                    if (middlewareResult != modelResponse)
+                    {
+                        modelResponse = middlewareResult;
+                        break;
+                    }
+                }
 
                 skip.Add(model);
                 if (modelResponse is SkipResult)
@@ -198,6 +225,7 @@ namespace HttpEngine.Core
                 viewData = modelResponse.File;
                 publicFile = false;
                 headers = modelResponse.Headers;
+                cookies = modelResponse.Cookies;
                 if (modelResponse.StatusCode != -1)
                     statusCode = modelResponse.StatusCode;
             }
@@ -212,6 +240,7 @@ namespace HttpEngine.Core
                 viewData = modelResponse.File;
                 publicFile = false;
                 headers = modelResponse.Headers;
+                cookies = modelResponse.Cookies;
                 if (modelResponse.StatusCode != -1)
                     statusCode = modelResponse.StatusCode;
             }
@@ -264,10 +293,22 @@ namespace HttpEngine.Core
                     // Выбрасываем страницу с ошибкой 404 и ставим соответствующий код статуса
                     var error404Request = new ModelRequest(arguments, urlRoutes.ToArray(), context.Request.Url!.ToString(), context.Request.RawUrl, method,
                         handler, context.Request.Cookies, context.Response.Cookies, context.Request.Headers, route, context.Request.RemoteEndPoint.Address);
-                    modelResponse = Error404.OnRequest(error404Request);
+
+                    modelResponse = Error404.OnGet(error404Request);
+                    /*foreach (var middleware in Error404.Middlewares)
+                    {
+                        var middlewareResult = middleware.OnRequest(error404Request, modelResponse);
+                        if (middlewareResult != modelResponse)
+                        {
+                            modelResponse = middlewareResult;
+                            break;
+                        }
+                    }*/
+
                     viewData = modelResponse.File;
                     statusCode = 404;
                     headers = modelResponse.Headers;
+                    cookies = modelResponse.Cookies;
                 }
             }
 
@@ -280,7 +321,8 @@ namespace HttpEngine.Core
                 PublicFile = publicFile,
                 StatusCode = statusCode,
                 Headers = headers,
-                ContentType = contentType
+                ContentType = contentType,
+                Cookies = cookies
             };
         }
 
@@ -309,5 +351,6 @@ namespace HttpEngine.Core
         public int StatusCode { get; set; }
         public WebHeaderCollection Headers { get; set; }
         public string? ContentType { get; set; }
+        public CookieCollection Cookies { get; set; }
     }
 }

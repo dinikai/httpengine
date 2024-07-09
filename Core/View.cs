@@ -10,53 +10,53 @@ namespace HttpEngine.Core
         /// <summary>
         /// Gets or sets the layout associated with the view.
         /// </summary>
-        public Layout Layout { get; set; }
+        public Layout? Layout { get; set; }
 
         /// <summary>
-        /// Gets or sets the directory where resources are located.
+        /// Gets or sets the HTTP application associated with the model.
         /// </summary>
-        public string ResourcesDirectory { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to use the layout for the view.
-        /// </summary>
-        public bool UseLayout { get; set; } = true;
+        public HttpApplication Application { get; set; }
 
         /// <summary>
         /// Gets the view content based on the model request.
         /// </summary>
         /// <param name="request">The model request.</param>
         /// <returns>The model file representing the view content.</returns>
-        public abstract ModelFile GetView(ModelRequest request);
+        public abstract ModelFile Render(ModelRequest request);
 
         /// <summary>
-        /// Retrieves a model file from the specified file name and request.
+        /// Called when the view is put into use.
+        /// </summary>
+        public virtual void OnUse()
+        {
+
+        }
+
+        /// <summary>
+        /// Retrieves a model file from the specified file.
         /// </summary>
         /// <param name="fileName">The name of the file.</param>
         /// <param name="request">The model request.</param>
         /// <returns>The model file.</returns>
         protected ModelFile File(string fileName, ModelRequest request)
         {
-            FileStream file = new FileStream(Path.Combine(ResourcesDirectory, fileName), FileMode.Open);
-            byte[] buffer = new byte[file.Length];
-            file.Read(buffer);
-            file.Close();
+            byte[] data = Application.ReadResource(fileName)!;
 
-            string @string = Encoding.UTF8.GetString(buffer);
-            buffer = Encoding.UTF8.GetBytes(@string.Replace("\r", ""));
+            string @string = Encoding.UTF8.GetString(data);
+            data = Encoding.UTF8.GetBytes(@string.Replace("\r", ""));
 
-            if (UseLayout)
+            if (Layout == null)
+            {
+                return new ModelFile(data);
+            }
+            else
             {
                 ModelFile layout = Layout.OnRequest(request);
                 layout.ParseView(new()
                 {
-                    ["body"] = Encoding.UTF8.GetString(buffer),
+                    ["body"] = Encoding.UTF8.GetString(data),
                 }, false);
                 return layout;
-            }
-            else
-            {
-                return new ModelFile(buffer);
             }
         }
     }
